@@ -51,7 +51,9 @@ func PlaceMasters(cluster *redis.Cluster, currentMaster redis.Nodes, allPossible
 			break
 		}
 		bestEffort = true
-		glog.Warning("the Pod are not spread enough on VMs to have only one Master by VM.")
+		if glog.V(4) {
+			glog.Warning("the Pod are not spread enough on VMs to have only one Master by VM.")
+		}
 	}
 	glog.Infof("- bestEffort %v", bestEffort)
 	for _, node := range selection {
@@ -75,7 +77,9 @@ func PlaceSlaves(cluster *redis.Cluster, masters, oldSlaves, newSlaves redis.Nod
 					return node.ID == newSlave.ID
 				}
 				newSlaves.FilterByFunc(removeIDFunc)
-				glog.Warning("Remove oldSlave for newSlave, id:", newSlave.ID)
+				if glog.V(4) {
+					glog.Warning("Remove oldSlave for newSlave, id:", newSlave.ID)
+				}
 			}
 		}
 	}
@@ -161,7 +165,9 @@ func PlaceSlaves(cluster *redis.Cluster, masters, oldSlaves, newSlaves redis.Nod
 	bestEffort := false
 	if isSlaveNodeUsed {
 		bestEffort = true
-		glog.Warning("Unable to spread properly all the Slave on different VMs, we start best effort")
+		if glog.V(4) {
+			glog.Warning("Unable to spread properly all the Slave on different VMs, we start best effort")
+		}
 		for _, freeSlaves := range slavesByVMNotUsed {
 			for _, freeSlave := range freeSlaves {
 				for masterID, slaves := range slavesByMaster {

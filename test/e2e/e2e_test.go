@@ -16,6 +16,7 @@ func TestE2E(t *testing.T) {
 func TestMain(m *testing.M) {
 
 	pflag.StringVar(&framework.FrameworkContext.KubeConfigPath, "kubeconfig", "", "Path to kubeconfig")
+	pflag.StringVar(&framework.FrameworkContext.ImageTag, "image-tag", "latest", "image tag")
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	pflag.Parse()
 	goflag.CommandLine.Parse([]string{})

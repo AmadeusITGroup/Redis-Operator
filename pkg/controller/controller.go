@@ -66,7 +66,7 @@ func NewController(cfg *Config, kubeClient clientset.Interface, redisClient rcli
 
 	serviceInformer := kubeInformer.Core().V1().Services()
 	podInformer := kubeInformer.Core().V1().Pods()
-	redisInformer := rInformer.Redis().V1().RedisClusters()
+	redisInformer := rInformer.Redisoperator().V1().RedisClusters()
 
 	ctrl := &Controller{
 		kubeClient:         kubeClient,
@@ -152,10 +152,10 @@ func (c *Controller) processNextItem() bool {
 }
 
 func (c *Controller) sync(key string) (bool, error) {
-	glog.Infof("sync() key:%s", key)
+	glog.V(2).Infof("sync() key:%s", key)
 	startTime := metav1.Now()
 	defer func() {
-		glog.V(6).Infof("Finished syncing RedisCluster %q (%v", key, time.Since(startTime.Time))
+		glog.V(2).Infof("Finished syncing RedisCluster %q (%v", key, time.Since(startTime.Time))
 	}()
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -289,6 +289,7 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 	// Now check if the Operator need to execute some operation the redis cluster. if yes run the clusterAction(...) method.
 	needSanitize, err := c.checkSanityCheck(rediscluster, admin, clusterInfos)
 	if err != nil {
+		glog.Errorf("checkSanityCheck, error happened in dryrun mode, err:%v", err)
 		return false, err
 	}
 
@@ -425,7 +426,7 @@ func (c *Controller) enqueue(rediscluster *rapi.RedisCluster) {
 }
 
 func (c *Controller) updateRedisCluster(rediscluster *rapi.RedisCluster) (*rapi.RedisCluster, error) {
-	rc, err := c.redisClient.RedisV1().RedisClusters(rediscluster.Namespace).Update(rediscluster)
+	rc, err := c.redisClient.Redisoperator().RedisClusters(rediscluster.Namespace).Update(rediscluster)
 	if err != nil {
 		glog.Errorf("updateRedisCluster cluster: [%v] error: %v", *rediscluster, err)
 		return rc, err

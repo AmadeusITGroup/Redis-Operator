@@ -1,4 +1,4 @@
-apiVersion: "redis.k8s-operator.io/v1alpha1"
+apiVersion: "redisoperator.k8s.io/v1alpha1"
 kind: RedisCluster
 metadata:
   name: cluster-test

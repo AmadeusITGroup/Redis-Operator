@@ -22,6 +22,7 @@ func TestUpdateNodeConfigFile(t *testing.T) {
 	a := admin.NewFakeAdmin([]string{})
 	c := Config{
 		RedisServerPort: "1234",
+		RedisMaxMemory:  0,
 		Redis: config.Redis{
 			ClusterNodeTimeout: 321,
 			ConfigFile:         configfile.Name(),

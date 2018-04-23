@@ -16,6 +16,17 @@ import (
 
 func (c *Controller) clusterAction(admin redis.AdminInterface, cluster *rapi.RedisCluster, infos *redis.ClusterInfos) (bool, error) {
 	var err error
+	// run sanity check if needed
+	needSanity, err := sanitycheck.RunSanityChecks(admin, &c.config.redis, c.podControl, cluster, infos, true)
+	if err != nil {
+		glog.Errorf("[clusterAction] cluster %s/%s, an error occurs during sanitycheck: %v ", cluster.Namespace, cluster.Name, err)
+		return false, err
+	}
+	if needSanity {
+		glog.V(3).Infof("[clusterAction] run sanitycheck cluster: %s/%s", cluster.Namespace, cluster.Name)
+		return sanitycheck.RunSanityChecks(admin, &c.config.redis, c.podControl, cluster, infos, false)
+	}
+
 	// Start more pods in needed
 	if needMorePods(cluster) {
 		if setScalingCondition(&cluster.Status, true) {
@@ -48,17 +59,6 @@ func (c *Controller) clusterAction(admin redis.AdminInterface, cluster *rapi.Red
 	if hasChanged {
 		glog.V(6).Infof("[clusterAction] cluster has changed cluster: %s/%s", cluster.Namespace, cluster.Name)
 		return true, nil
-	}
-
-	// run sanity check if needed
-	needSanity, err := sanitycheck.RunSanityChecks(admin, &c.config.redis, c.podControl, cluster, infos, true)
-	if err != nil {
-		glog.Errorf("[clusterAction] cluster %s/%s, an error occurs during sanitycheck: %v ", cluster.Namespace, cluster.Name, err)
-		return false, err
-	}
-	if needSanity {
-		glog.V(3).Infof("[clusterAction] run sanitycheck cluster: %s/%s", cluster.Namespace, cluster.Name)
-		return sanitycheck.RunSanityChecks(admin, &c.config.redis, c.podControl, cluster, infos, false)
 	}
 
 	glog.V(6).Infof("[clusterAction] cluster hasn't changed cluster: %s/%s", cluster.Namespace, cluster.Name)
@@ -195,6 +195,37 @@ func (c *Controller) managePodScaleDown(admin redis.AdminInterface, cluster *rap
 		return true, errGlobal
 	}
 
+	if nbMasterToDelete, ok := checkNumberOfMaster(cluster); !ok {
+		glog.V(6).Info("checkNumberOfMaster NOT OK")
+		newNumberOfMaster := cluster.Status.Cluster.NumberOfMaster
+
+		// we decrease only one by one the number of master in order to limit the impact on the client.
+		if nbMasterToDelete > 0 {
+			newNumberOfMaster--
+		}
+
+		//First, we define the new masters
+		newMasters, curMasters, allMaster, err := clustering.DispatchMasters(rCluster, nodes, newNumberOfMaster, admin)
+		if err != nil {
+			glog.Errorf("Error while dispatching slots to masters, err: %v", err)
+			cluster.Status.Cluster.Status = rapi.ClusterStatusKO
+			rCluster.Status = rapi.ClusterStatusKO
+			return false, err
+		}
+
+		if err := clustering.DispatchSlotToNewMasters(rCluster, admin, newMasters, curMasters, allMaster); err != nil {
+			glog.Error("Unable to dispatch slot on new master, err:", err)
+			return false, err
+		}
+
+		removedMasters, removeSlaves := getOldNodesToRemove(curMasters, newMasters, nodes)
+
+		if _, err := detachAndForgetNodes(admin, removedMasters, removeSlaves); err != nil {
+			glog.Error("Unable to detach and forhet old masters and associated slaves, err:", err)
+			return false, err
+		}
+	}
+
 	if slaveByMaster, ok := checkReplicationFactor(cluster); !ok {
 		glog.V(6).Info("checkReplicationFactor NOT OK")
 		// if not OK means that the level of replication is not good
@@ -242,37 +273,6 @@ func (c *Controller) managePodScaleDown(admin redis.AdminInterface, cluster *rap
 				}
 				return true, errors.NewAggregate(errs)
 			}
-		}
-	}
-
-	if nbMasterToDelete, ok := checkNumberOfMaster(cluster); !ok {
-		glog.V(6).Info("checkNumberOfMaster NOT OK")
-		newNumberOfMaster := cluster.Status.Cluster.NumberOfMaster
-
-		// we decrease only one by one the number of master in order to limit the impact on the client.
-		if nbMasterToDelete > 0 {
-			newNumberOfMaster--
-		}
-
-		//First, we define the new masters
-		newMasters, curMasters, allMaster, err := clustering.DispatchMasters(rCluster, nodes, newNumberOfMaster, admin)
-		if err != nil {
-			glog.Errorf("Error while dispatching slots to masters, err: %v", err)
-			cluster.Status.Cluster.Status = rapi.ClusterStatusKO
-			rCluster.Status = rapi.ClusterStatusKO
-			return false, err
-		}
-
-		if err := clustering.DispatchSlotToNewMasters(rCluster, admin, newMasters, curMasters, allMaster); err != nil {
-			glog.Error("Unable to dispatch slot on new master, err:", err)
-			return false, err
-		}
-
-		removedMasters, removeSlaves := getOldNodesToRemove(curMasters, newMasters, nodes)
-
-		if _, err := detachAndForgetNodes(admin, removedMasters, removeSlaves); err != nil {
-			glog.Error("Unable to detach and forhet old masters and associated slaves, err:", err)
-			return false, err
 		}
 	}
 

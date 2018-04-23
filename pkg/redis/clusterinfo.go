@@ -155,8 +155,8 @@ func (c *ClusterInfos) ComputeStatus() bool {
 		nodeSignature := getConfigSignature(nodesView)
 		glog.V(7).Infof("Node view from %s (ID: %s):\n%s", addr, nodeinfos.Node.ID, nodeSignature)
 		if !reflect.DeepEqual(consolidatedSignature, nodeSignature) {
-			glog.V(2).Info("Temporary inconsistency between nodes is possible. If the following inconsistency message persists for more than 20 mins, any cluster operation (scale, rolling update) should be avoided before the message is gone")
-			glog.V(2).Infof("Inconsistency from %s: \n%s\nVS\n%s", addr, consolidatedSignature, nodeSignature)
+			glog.V(4).Info("Temporary inconsistency between nodes is possible. If the following inconsistency message persists for more than 20 mins, any cluster operation (scale, rolling update) should be avoided before the message is gone")
+			glog.V(4).Infof("Inconsistency from %s: \n%s\nVS\n%s", addr, consolidatedSignature, nodeSignature)
 			c.Status = ClusterInfosInconsistent
 		}
 	}

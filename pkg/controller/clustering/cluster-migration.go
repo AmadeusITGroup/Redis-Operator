@@ -59,7 +59,9 @@ func DispatchSlotToNewMasters(cluster *redis.Cluster, admin redis.AdminInterface
 	for nodesInfo, slots := range migrationSlotInfo {
 		// There is a need for real error handling here, we must ensure we don't keep a slot in abnormal state
 		if nodesInfo.From == nil {
-			glog.Warning("1) Add slots that having probably been lost during scale down, destination: ", nodesInfo.To.ID, " total:", len(slots), " : ", redis.SlotSlice(slots))
+			if glog.V(4) {
+				glog.Warning("1) Add slots that having probably been lost during scale down, destination: ", nodesInfo.To.ID, " total:", len(slots), " : ", redis.SlotSlice(slots))
+			}
 			err := admin.AddSlots(nodesInfo.To.IPPort(), slots)
 			if err != nil {
 				glog.Error("Error during ADDSLOTS:", err)
@@ -91,11 +93,15 @@ func DispatchSlotToNewMasters(cluster *redis.Cluster, admin redis.AdminInterface
 			// creating a cluster view discrepency
 			err = admin.SetSlots(nodesInfo.To.IPPort(), "NODE", slots, nodesInfo.To.ID)
 			if err != nil {
-				glog.Warningf("Warning during SETSLOT NODE on %s: %v", nodesInfo.To.IPPort(), err)
+				if glog.V(4) {
+					glog.Warningf("Warning during SETSLOT NODE on %s: %v", nodesInfo.To.IPPort(), err)
+				}
 			}
 			err = admin.SetSlots(nodesInfo.From.IPPort(), "NODE", slots, nodesInfo.To.ID)
 			if err != nil {
-				glog.Warningf("Warning during SETSLOT NODE on %s: %v", nodesInfo.From.IPPort(), err)
+				if glog.V(4) {
+					glog.Warningf("Warning during SETSLOT NODE on %s: %v", nodesInfo.From.IPPort(), err)
+				}
 			}
 
 			// Update bom
@@ -116,7 +122,9 @@ func DispatchSlotToNewMasters(cluster *redis.Cluster, admin redis.AdminInterface
 				glog.V(6).Info("4) Send SETSLOT NODE command target:", master.ID, " new owner:", nodesInfo.To.ID, " total:", len(slots), " : ", redis.SlotSlice(slots))
 				err = admin.SetSlots(master.IPPort(), "NODE", slots, nodesInfo.To.ID)
 				if err != nil {
-					glog.Warningf("Warning during SETSLOT NODE on %s: %v", master.IPPort(), err)
+					if glog.V(4) {
+						glog.Warningf("Warning during SETSLOT NODE on %s: %v", master.IPPort(), err)
+					}
 				}
 			}
 		}

@@ -2,6 +2,10 @@
 
 ![logo](docs/imgs/logo.png)
 
+### Build Status
+[![Build Status](https://travis-ci.org/AmadeusITGroup/Redis-Operator.svg?branch=master)](https://travis-ci.org/AmadeusITGroup/Redis-Operator)
+
+
 ## Project status: alpha
 
 This is an ongoing project.

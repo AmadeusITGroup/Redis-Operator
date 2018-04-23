@@ -1,4 +1,4 @@
-apiVersion: "redis.k8s-operator.io/v1alpha1"
+apiVersion: "redisoperator.k8s.io/v1alpha1"
 kind: RedisCluster
 metadata:
   name: {{ template "cluster-name" . }}
@@ -54,7 +54,7 @@ spec:
             httpGet:
               path: /live
               port: 8080
-            initialDelaySeconds: 10
+            initialDelaySeconds: 12
             timeoutSeconds: 5
             periodSeconds: 10
             successThreshold: 1
@@ -63,6 +63,7 @@ spec:
             httpGet:
               path: /ready
               port: 8080
+            initialDelaySeconds: 12
             timeoutSeconds: 5
             periodSeconds: 10
             successThreshold: 1

@@ -1,0 +1,59 @@
+language: go
+dist: trusty
+sudo: required
+go:
+- 1.9.x
+os: linux
+services:
+- docker
+env:
+  global:
+  - CHANGE_MINIKUBE_NONE_USER=true
+  - TAG=${TRAVIS_TAG:=${TRAVIS_COMMIT}}
+  - GH_URL=https://amadeusitgroup.github.io/redis-operator
+  - IMAGE_NAME=traviscontroller
+go_import_path: github.com/amadeusitgroup/redis-operator
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y socat
+- docker run --rm jpetazzo/nsenter cat /nsenter > /tmp/nsenter && chmod +x /tmp/nsenter
+- sudo cp /tmp/nsenter /usr/local/bin
+install:
+# Download kubectl, which is a requirement for using minikube.
+- curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.9.4/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+# Download minikube.
+- curl -Lo minikube https://storage.googleapis.com/minikube/releases/v0.25.2/minikube-linux-amd64 && chmod +x minikube && sudo mv minikube /usr/local/bin/
+- sudo minikube start --vm-driver=none --kubernetes-version=v1.9.4 --extra-config=apiserver.Authorization.Mode=RBAC
+# Fix the kubectl context, as it's often stale.
+- minikube update-context
+# Wait for Kubernetes to be up and ready.
+- JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}'; until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do sleep 1; done
+# Add missing permission for dashboard when RBAC is activated
+- kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+- kubectl get nodes
+- kubectl get pods --all-namespaces
+- curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get | bash
+- kubectl -n kube-system create sa tiller
+- kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+- helm init --service-account tiller
+- go get -u github.com/alecthomas/gometalinter && gometalinter --install
+stages:
+- name: build
+- name: release
+  if: tag IS present
+jobs:
+  include:
+  - stage: build
+    name: build
+    script:
+    - make build
+    - make test
+    - make TAG=$TAG container
+    - make TAG=4.0 container
+    - docker images
+    - kubectl get pods --all-namespaces
+    - helm install --wait --version $TAG -n end2end-test --set image.pullPolicy=IfNotPresent --set image.tag=$TAG chart/redis-operator
+    - cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 200
+    - helm delete end2end-test
+after_success:
+- bash <(curl -s https://codecov.io/bash) -f $TRAVIS_BUILD_DIR/.cover/cover.out
