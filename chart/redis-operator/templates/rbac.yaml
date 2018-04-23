@@ -1,0 +1,40 @@
+{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1beta1" }}
+apiVersion: v1
+kind: List
+items:
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRole
+  metadata:
+    name: redis-operator
+  rules:
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+    - customresourcedefinitions
+    verbs: ["*"]
+  - apiGroups: 
+    - "{{ .Values.apiGroupName }}"
+    resources:
+    - redisclusters
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources:
+    - pods
+    - services
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources:
+    - namespaces
+    verbs: ["list"]
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: ClusterRoleBinding
+  metadata:
+    name: redis-operator
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: redis-operator
+  subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.serviceAccount }}
+    namespace: {{ .Release.Namespace }}
+{{ end }}

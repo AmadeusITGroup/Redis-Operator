@@ -1,0 +1,77 @@
+apiVersion: "redis.k8s-operator.io/v1alpha1"
+kind: RedisCluster
+metadata:
+  name: {{ template "cluster-name" . }}
+spec:
+  numberOfMaster: {{ .Values.numberOfMaster }}
+  replicationFactor: {{ .Values.replicationFactor }}
+  serviceName: {{ template "service-name" . }}
+  podTemplate:
+    metadata:
+      labels:
+        app: {{ template "name" . }}
+    spec:
+      serviceAccountName: "{{ .Values.serviceAccount }}"
+      volumes:
+        - name: data
+          emptyDir: {}
+      containers:
+        - name: redis-node
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          args: ["--v={{ .Values.log.level }}", 
+            "--logtostderr=true", 
+            "--alsologtostderr=true",
+            "--rs={{ template "service-name" . }}", 
+            "--t=10s", 
+            "--d=10s", 
+            "--ns=$(POD_NAMESPACE)",
+{{- if .Values.resources }}
+             "--max-memory=$(MEMORY_REQUEST)",
+{{- end }}
+            "--cluster-node-timeout=2000"]
+          imagePullPolicy: IfNotPresent
+          ports:
+              - containerPort: 6379
+                name:  redis
+              - containerPort: 16379
+                name: cluster
+          volumeMounts:
+            - name: data
+              mountPath: /redis-data
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+{{- if .Values.resources }}
+            - name: MEMORY_REQUEST
+              valueFrom:
+                resourceFieldRef:
+                  containerName: redis-node
+                  resource: requests.memory
+{{- end }}
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+{{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- end }}
+{{- if .Values.nodeSelector }}
+          nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 12 }}
+{{- end }}

@@ -1,0 +1,61 @@
+apiVersion: "redis.k8s-operator.io/v1alpha1"
+kind: RedisCluster
+metadata:
+  name: cluster-test
+spec:
+  additionalLabels:
+    foo: bar
+  numberOfMaster: 3
+  replicationFactor: 1
+  podTemplate:
+    metadata:
+      labels:
+        app: cluster-test
+    spec:
+      ServiceAccountName: "redis-node"
+      volumes:
+        - name: data
+          emptyDir: {}
+      containers:
+        - name: redis
+          image: "redis-operator/redisnode:latest"
+          args: ["--v=6", 
+            "--logtostderr=true", 
+            "--alsologtostderr=true",
+            "--t=10s", 
+            "--d=10s",
+            "--cluster-node-timeout=2000",
+            "--ns=$(POD_NAMESPACE)",
+            "--rs=cluster-test"]
+          imagePullPolicy: IfNotPresent
+          ports:
+              - containerPort: 6379
+                name:  redis
+              - containerPort: 16379
+                name: cluster
+          volumeMounts:
+            - name: data
+              mountPath: /redis-data
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+
