@@ -23,15 +23,16 @@ eval $(minikube docker-env)
 echo "Install the redis-cluster operator"
 
 echo "First build the container"
-make TAG=latest container
+TAG=latest
+make TAG=$TAG container
 # tag the same image for rolling-update test
-docker tag redis-operator/redisnode:latest redis-operator/redisnode:4.0
+docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:4.0
 
 echo "create RBAC for rediscluster"
 kubectl create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
 
 printf  "create and install the redis operator in a dedicate namespace"
-until helm install -n operator chart/redis-operator; do sleep 1; printf "."; done
+until helm install -n operator --set image.tag=$TAG chart/redis-operator; do sleep 1; printf "."; done
 echo
 
 printf "Waiting for redis-operator deployment to complete."
@@ -39,7 +40,7 @@ until [ $(kubectl get deployment operator-redis-operator -ojsonpath="{.status.co
 echo
 
 echo "[[[ Run End2end test ]]] "
-cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --ginkgo.slowSpecThreshold 260
+cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 260
 
 echo "[[[ Cleaning ]]]"
 

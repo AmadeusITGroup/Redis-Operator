@@ -47,8 +47,8 @@ func NewGarbageCollector(rcClient rclientset.Interface, kubeClient kclientset.In
 	return &GarbageCollector{
 		kubeClient: kubeClient,
 		rcClient:   rcClient,
-		rcLister:   rcInformerFactory.Redis().V1().RedisClusters().Lister(),
-		rcSynced:   rcInformerFactory.Redis().V1().RedisClusters().Informer().HasSynced,
+		rcLister:   rcInformerFactory.Redisoperator().V1().RedisClusters().Lister(),
+		rcSynced:   rcInformerFactory.Redisoperator().V1().RedisClusters().Informer().HasSynced,
 	}
 }
 
@@ -98,7 +98,7 @@ func (c *GarbageCollector) collectRedisClusterPods() error {
 			continue
 		}
 		// RedisCluster couldn't be find in cache. Trying to get it via APIs.
-		if _, err := c.rcClient.Redis().RedisClusters(pod.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
+		if _, err := c.rcClient.Redisoperator().RedisClusters(pod.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
 			if !apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("Unexpected error retrieving rediscluster %s/%s for pod %s/%s: %v", pod.Namespace, redisclusterName, pod.Namespace, pod.Name, err))
 				continue
@@ -144,7 +144,7 @@ func (c *GarbageCollector) collectRedisClusterServices() error {
 			continue
 		}
 		// RedisCluster couldn't be find in cache. Trying to get it via APIs.
-		if _, err := c.rcClient.Redis().RedisClusters(service.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
+		if _, err := c.rcClient.Redisoperator().RedisClusters(service.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
 			if !apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("Unexpected error retrieving rediscluster %s/%s for service %s/%s: %v", service.Namespace, redisclusterName, service.Namespace, service.Name, err))
 				continue
@@ -167,8 +167,8 @@ func CascadeDeleteOptions(gracePeriodSeconds int64) *metav1.DeleteOptions {
 	return &metav1.DeleteOptions{
 		GracePeriodSeconds: func(t int64) *int64 { return &t }(gracePeriodSeconds),
 		PropagationPolicy: func() *metav1.DeletionPropagation {
-			foreground := metav1.DeletePropagationForeground
-			return &foreground
+			background := metav1.DeletePropagationBackground
+			return &background
 		}(),
 	}
 }

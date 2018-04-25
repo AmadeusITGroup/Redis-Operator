@@ -22,7 +22,7 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args: ["--v=6", "--logtostderr=true", "--alsologtostderr"]
+          args: ["--v={{ .Values.log.level }}", "--logtostderr=true", "--alsologtostderr"]
           livenessProbe:
             httpGet:
               path: /live

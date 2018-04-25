@@ -28,7 +28,7 @@ oc create clusterrolebinding redis-operators --clusterrole=cluster-admin --servi
 echo "First build the container"
 make TAG=latest container
 # tag the same image for rolling-update test
-docker tag redis-operator/redisnode:latest redis-operator/redisnode:4.0
+docker tag redisoperator/redisnode:latest redisoperator/redisnode:4.0
 
 echo "create RBAC for rediscluster"
 oc create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml

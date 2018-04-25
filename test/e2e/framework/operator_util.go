@@ -50,7 +50,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 					Containers: []v1.Container{
 						{
 							Name:            "redis",
-							Image:           fmt.Sprintf("redis-operator/redisnode:%s", tag),
+							Image:           fmt.Sprintf("redisoperator/redisnode:%s", tag),
 							ImagePullPolicy: v1.PullIfNotPresent,
 							Args: []string{
 								"--v=6",
@@ -79,7 +79,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 										Port: intstr.FromInt(8080),
 									},
 								},
-								InitialDelaySeconds: 10,
+								InitialDelaySeconds: 12,
 								TimeoutSeconds:      5,
 								PeriodSeconds:       10,
 								SuccessThreshold:    1,
@@ -92,10 +92,11 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 										Port: intstr.FromInt(8080),
 									},
 								},
-								TimeoutSeconds:   5,
-								PeriodSeconds:    10,
-								SuccessThreshold: 1,
-								FailureThreshold: 3,
+								InitialDelaySeconds: 12,
+								TimeoutSeconds:      5,
+								PeriodSeconds:       10,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
@@ -125,7 +126,7 @@ func BuildAndSetClients() (versioned.Interface, clientset.Interface) {
 // HOCreateRedisCluster is an higher order func that returns the func to create a RedisCluster
 func HOCreateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		if _, err := client.RedisV1().RedisClusters(namespace).Create(rediscluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Create(rediscluster); err != nil {
 			glog.Warningf("cannot create RedisCluster %s/%s: %v", namespace, rediscluster.Name, err)
 			return err
 		}
@@ -137,13 +138,13 @@ func HOCreateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCl
 // HOUpdateRedisCluster is an higher order func that returns the func to update a RedisCluster
 func HOUpdateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		cluster, err := client.RedisV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Logf("Cannot get rediscluster:%v", err)
 			return err
 		}
 		cluster.Spec = rediscluster.Spec
-		if _, err := client.RedisV1().RedisClusters(namespace).Update(cluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Update(cluster); err != nil {
 			glog.Warningf("cannot update RedisCluster %s/%s: %v", namespace, rediscluster.Name, err)
 			return err
 		}
@@ -155,7 +156,7 @@ func HOUpdateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCl
 // HOIsRedisClusterStarted is an higher order func that returns the func that checks whether RedisCluster is started and configured properly
 func HOIsRedisClusterStarted(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		cluster, err := client.RedisV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Logf("Cannot get rediscluster:%v", err)
 			return err
@@ -188,7 +189,7 @@ func HOIsRedisClusterStarted(client versioned.Interface, rediscluster *rapi.Redi
 // HOUpdateConfigRedisCluster is an higher order func that returns the func to update the RedisCluster configuration
 func HOUpdateConfigRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, nbmaster, replicas *int32) func() error {
 	return func() error {
-		cluster, err := client.RedisV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			glog.Warningf("cannot get RedisCluster %s/%s: %v", rediscluster.Namespace, rediscluster.Name, err)
 			return err
@@ -201,7 +202,7 @@ func HOUpdateConfigRedisCluster(client versioned.Interface, rediscluster *rapi.R
 			rediscluster.Spec.ReplicationFactor = replicas
 			cluster.Spec.ReplicationFactor = replicas
 		}
-		if _, err := client.RedisV1().RedisClusters(rediscluster.Namespace).Update(cluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(cluster); err != nil {
 			Logf("cannot update RedisCluster %s/%s: %v", rediscluster.Namespace, rediscluster.Name, err)
 			return err
 		}

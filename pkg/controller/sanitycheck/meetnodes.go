@@ -38,7 +38,6 @@ func fixNodesNotMeetFunc(admin redis.AdminInterface, infos *redis.ClusterInfos, 
 			if !found {
 				var err error
 				if !dryRun {
-					glog.V(2).Infof("[SanityChecks] cluster meet %s %s", node1.Node.ID, node2.Node.ID)
 					err = meetFunc(admin, node1.Node, node2.Node)
 				}
 				if err != nil {

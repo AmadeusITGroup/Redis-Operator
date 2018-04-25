@@ -18,6 +18,7 @@ type Framework struct {
 
 type frameworkContextType struct {
 	KubeConfigPath string
+	ImageTag  string
 }
 
 // FrameworkContext stores globally the framework context

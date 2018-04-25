@@ -1,22 +1,30 @@
 /*
-Copyright 2017 Redis-Operator
+MIT License
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) 2018 Amadeus s.a.s.
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 package versioned
 
 import (
-	redisv1 "github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned/typed/redis/v1"
+	redisoperatorv1 "github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned/typed/redis/v1"
 	glog "github.com/golang/glog"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -25,27 +33,27 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	RedisV1() redisv1.RedisV1Interface
+	RedisoperatorV1() redisoperatorv1.RedisoperatorV1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Redis() redisv1.RedisV1Interface
+	Redisoperator() redisoperatorv1.RedisoperatorV1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	redisV1 *redisv1.RedisV1Client
+	redisoperatorV1 *redisoperatorv1.RedisoperatorV1Client
 }
 
-// RedisV1 retrieves the RedisV1Client
-func (c *Clientset) RedisV1() redisv1.RedisV1Interface {
-	return c.redisV1
+// RedisoperatorV1 retrieves the RedisoperatorV1Client
+func (c *Clientset) RedisoperatorV1() redisoperatorv1.RedisoperatorV1Interface {
+	return c.redisoperatorV1
 }
 
-// Deprecated: Redis retrieves the default version of RedisClient.
+// Deprecated: Redisoperator retrieves the default version of RedisoperatorClient.
 // Please explicitly pick a version.
-func (c *Clientset) Redis() redisv1.RedisV1Interface {
-	return c.redisV1
+func (c *Clientset) Redisoperator() redisoperatorv1.RedisoperatorV1Interface {
+	return c.redisoperatorV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -64,7 +72,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.redisV1, err = redisv1.NewForConfig(&configShallowCopy)
+	cs.redisoperatorV1, err = redisoperatorv1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +89,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.redisV1 = redisv1.NewForConfigOrDie(c)
+	cs.redisoperatorV1 = redisoperatorv1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -90,7 +98,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.redisV1 = redisv1.New(c)
+	cs.redisoperatorV1 = redisoperatorv1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
