@@ -1,7 +1,12 @@
 package pod
 
 import (
+	"bytes"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 
 	kapiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +65,7 @@ func (p *RedisClusterControl) CreatePod(redisCluster *rapi.RedisCluster) (*kapiv
 		return pod, err
 	}
 	glog.V(6).Infof("CreatePod: %s/%s", redisCluster.Namespace, pod.Name)
-	return p.KubeClient.Core().Pods(redisCluster.Namespace).Create(pod)
+	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Create(pod)
 }
 
 // DeletePod used to delete a pod from its name
@@ -78,10 +83,14 @@ func (p *RedisClusterControl) DeletePodNow(redisCluster *rapi.RedisCluster, podN
 
 // DeletePodNow used to delete now (force) a pod from its name
 func (p *RedisClusterControl) deletePodGracefullperiode(redisCluster *rapi.RedisCluster, podName string, period *int64) error {
-	return p.KubeClient.Core().Pods(redisCluster.Namespace).Delete(podName, &metav1.DeleteOptions{GracePeriodSeconds: period})
+	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Delete(podName, &metav1.DeleteOptions{GracePeriodSeconds: period})
 }
 
 func initPod(redisCluster *rapi.RedisCluster) (*kapiv1.Pod, error) {
+	if redisCluster == nil {
+		return nil, fmt.Errorf("rediscluster nil pointer")
+	}
+
 	desiredLabels, err := GetLabelsSet(redisCluster)
 	if err != nil {
 		return nil, err
@@ -93,6 +102,7 @@ func initPod(redisCluster *rapi.RedisCluster) (*kapiv1.Pod, error) {
 	PodName := fmt.Sprintf("rediscluster-%s-", redisCluster.Name)
 	pod := &kapiv1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
+			Namespace:       redisCluster.Namespace,
 			Labels:          desiredLabels,
 			Annotations:     desiredAnnotations,
 			GenerateName:    PodName,
@@ -100,9 +110,30 @@ func initPod(redisCluster *rapi.RedisCluster) (*kapiv1.Pod, error) {
 		},
 	}
 
+	if redisCluster.Spec.PodTemplate == nil {
+		return nil, fmt.Errorf("rediscluster[%s/%s] PodTemplate missing", redisCluster.Namespace, redisCluster.Name)
+	}
 	pod.Spec = *redisCluster.Spec.PodTemplate.Spec.DeepCopy()
 
+	// Generate a MD5 representing the PodSpec send
+	hash, err := GenerateMD5Spec(&pod.Spec)
+	if err != nil {
+		return nil, err
+	}
+	pod.Annotations[rapi.PodSpecMD5LabelKey] = hash
+
 	return pod, nil
+}
+
+// GenerateMD5Spec used to generate the PodSpec MD5 hash
+func GenerateMD5Spec(spec *kapiv1.PodSpec) (string, error) {
+	b, err := json.Marshal(spec)
+	if err != nil {
+		return "", err
+	}
+	hash := md5.New()
+	io.Copy(hash, bytes.NewReader(b))
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // BuildOwnerReference used to build the OwnerReference from a RedisCluster

@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
-	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
 	kapi "k8s.io/api/core/v1"
 	kmetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
+	ctrlpod "github.com/amadeusitgroup/redis-operator/pkg/controller/pod"
 )
 
 func Test_checkReplicationFactor(t *testing.T) {
@@ -1034,6 +1037,13 @@ func Test_comparePodsWithPodTemplate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := comparePodsWithPodTemplate(tt.args.cluster); got != tt.want {
 				t.Errorf("comparePodsWithPodTemplate() = %v, want %v", got, tt.want)
+
+				bwant, _ := json.Marshal(&tt.args.cluster.Spec.PodTemplate.Spec)
+				t.Errorf("comparePodsWithPodTemplate() want %s", string(bwant))
+				for id, node := range tt.args.cluster.Status.Cluster.Nodes {
+					bgot, _ := json.Marshal(&node.Pod.Spec)
+					t.Errorf("comparePodsWithPodTemplate() have id:%d %s", id, string(bgot))
+				}
 			}
 		})
 	}
@@ -1044,21 +1054,34 @@ func newPodWithContainer(name, node string, containersInfos map[string]string) *
 	for name, image := range containersInfos {
 		containers = append(containers, kapi.Container{Name: name, Image: image})
 	}
-	return &kapi.Pod{
-		ObjectMeta: kmetav1.ObjectMeta{Name: name},
-		Spec: kapi.PodSpec{
-			NodeName:   node,
-			Containers: containers,
-		},
+
+	spec := kapi.PodSpec{
+		Containers: containers,
 	}
+
+	hash, _ := ctrlpod.GenerateMD5Spec(&spec)
+
+	pod := &kapi.Pod{
+		ObjectMeta: kmetav1.ObjectMeta{
+			Name:        name,
+			Annotations: map[string]string{rapi.PodSpecMD5LabelKey: string(hash)},
+		},
+		Spec: spec,
+	}
+
+	return pod
 }
 
 func Test_comparePodSpec(t *testing.T) {
-	podSpec1 := kapi.PodSpec{Containers: []kapi.Container{{Image: "redis-node:3.0.3"}}}
-	podSpec2 := kapi.PodSpec{Containers: []kapi.Container{{Image: "redis-node:4.0.8"}}}
+	podSpec1 := kapi.PodSpec{Containers: []kapi.Container{{Name: "redis-node", Image: "redis-node:3.0.3"}}}
+	podSpec2 := kapi.PodSpec{Containers: []kapi.Container{{Name: "redis-node", Image: "redis-node:4.0.8"}}}
+	podSpec3 := kapi.PodSpec{Containers: []kapi.Container{{Name: "redis-node", Image: "redis-node:3.0.3"}, {Name: "prometheus", Image: "prometheus-exporter:latest"}}}
+	hashspec1, _ := ctrlpod.GenerateMD5Spec(&podSpec1)
+	hashspec2, _ := ctrlpod.GenerateMD5Spec(&podSpec2)
+	hashspec3, _ := ctrlpod.GenerateMD5Spec(&podSpec3)
 	type args struct {
-		spec *kapi.PodSpec
-		pod  *kapi.PodSpec
+		spec string
+		pod  *kapi.Pod
 	}
 	tests := []struct {
 		name string
@@ -1068,23 +1091,44 @@ func Test_comparePodSpec(t *testing.T) {
 		{
 			name: "PodSpecs similar",
 			args: args{
-				spec: &podSpec1,
-				pod:  &podSpec1,
+				spec: hashspec1,
+				pod: &kapi.Pod{
+					ObjectMeta: kmetav1.ObjectMeta{
+						Annotations: map[string]string{rapi.PodSpecMD5LabelKey: string(hashspec1)},
+					},
+					Spec: podSpec1,
+				},
 			},
 			want: true,
 		},
 		{
 			name: "PodSpecs not equal",
 			args: args{
-				spec: &podSpec1,
-				pod:  &podSpec2,
+				spec: hashspec1,
+				pod: &kapi.Pod{
+					ObjectMeta: kmetav1.ObjectMeta{
+						Annotations: map[string]string{rapi.PodSpecMD5LabelKey: string(hashspec2)},
+					},
+					Spec: podSpec2},
+			},
+			want: false,
+		},
+		{
+			name: "additional container",
+			args: args{
+				spec: hashspec1,
+				pod: &kapi.Pod{
+					ObjectMeta: kmetav1.ObjectMeta{
+						Annotations: map[string]string{rapi.PodSpecMD5LabelKey: string(hashspec3)},
+					},
+					Spec: podSpec3},
 			},
 			want: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := comparePodSpec(tt.args.spec, tt.args.pod); got != tt.want {
+			if got := comparePodSpecMD5Hash(tt.args.spec, tt.args.pod); got != tt.want {
 				t.Errorf("comparePodSpec() = %v, want %v", got, tt.want)
 			}
 		})

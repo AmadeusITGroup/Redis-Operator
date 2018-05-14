@@ -8,6 +8,7 @@ import (
 	kapi "k8s.io/api/core/v1"
 
 	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
+	podctrl "github.com/amadeusitgroup/redis-operator/pkg/controller/pod"
 )
 
 func compareStatus(old, new *rapi.RedisClusterClusterStatus) bool {
@@ -158,11 +159,12 @@ func needRollingUpdate(cluster *rapi.RedisCluster) bool {
 }
 
 func comparePodsWithPodTemplate(cluster *rapi.RedisCluster) bool {
+	clusterPodSpecHash, _ := podctrl.GenerateMD5Spec(&cluster.Spec.PodTemplate.Spec)
 	for _, node := range cluster.Status.Cluster.Nodes {
 		if node.Pod == nil {
 			continue
 		}
-		if !comparePodSpec(&cluster.Spec.PodTemplate.Spec, &node.Pod.Spec) {
+		if !comparePodSpecMD5Hash(clusterPodSpecHash, node.Pod) {
 			return false
 		}
 	}
@@ -170,22 +172,13 @@ func comparePodsWithPodTemplate(cluster *rapi.RedisCluster) bool {
 	return true
 }
 
-func comparePodSpec(spec *kapi.PodSpec, pod *kapi.PodSpec) bool {
-	for _, containerSpec := range spec.Containers {
-		found := false
-		for _, container := range pod.Containers {
-			if container.Name == containerSpec.Name {
-				found = true
-				if container.Image != containerSpec.Image {
-					//if !reflect.DeepEqual(&container, containerSpec) {
-					return false
-				}
-				break
-			}
-		}
-		if !found {
+func comparePodSpecMD5Hash(hash string, pod *kapi.Pod) bool {
+	if val, ok := pod.Annotations[rapi.PodSpecMD5LabelKey]; ok {
+		if val != hash {
 			return false
 		}
+	} else {
+		return false
 	}
 
 	return true

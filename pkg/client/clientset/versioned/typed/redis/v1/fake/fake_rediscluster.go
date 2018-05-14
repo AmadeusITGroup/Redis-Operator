@@ -105,6 +105,18 @@ func (c *FakeRedisClusters) Update(redisCluster *redis_v1.RedisCluster) (result 
 	return obj.(*redis_v1.RedisCluster), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeRedisClusters) UpdateStatus(redisCluster *redis_v1.RedisCluster) (*redis_v1.RedisCluster, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(redisclustersResource, "status", c.ns, redisCluster), &redis_v1.RedisCluster{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*redis_v1.RedisCluster), err
+}
+
 // Delete takes name of the redisCluster and deletes it. Returns an error if one occurs.
 func (c *FakeRedisClusters) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

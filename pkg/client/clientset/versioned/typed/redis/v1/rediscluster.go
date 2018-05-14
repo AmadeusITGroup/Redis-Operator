@@ -42,6 +42,7 @@ type RedisClustersGetter interface {
 type RedisClusterInterface interface {
 	Create(*v1.RedisCluster) (*v1.RedisCluster, error)
 	Update(*v1.RedisCluster) (*v1.RedisCluster, error)
+	UpdateStatus(*v1.RedisCluster) (*v1.RedisCluster, error)
 	Delete(name string, options *meta_v1.DeleteOptions) error
 	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
 	Get(name string, options meta_v1.GetOptions) (*v1.RedisCluster, error)
@@ -119,6 +120,22 @@ func (c *redisClusters) Update(redisCluster *v1.RedisCluster) (result *v1.RedisC
 		Namespace(c.ns).
 		Resource("redisclusters").
 		Name(redisCluster.Name).
+		Body(redisCluster).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *redisClusters) UpdateStatus(redisCluster *v1.RedisCluster) (result *v1.RedisCluster, err error) {
+	result = &v1.RedisCluster{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("redisclusters").
+		Name(redisCluster.Name).
+		SubResource("status").
 		Body(redisCluster).
 		Do().
 		Into(result)

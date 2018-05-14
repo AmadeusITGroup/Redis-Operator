@@ -98,7 +98,7 @@ func (c *GarbageCollector) collectRedisClusterPods() error {
 			continue
 		}
 		// RedisCluster couldn't be find in cache. Trying to get it via APIs.
-		if _, err := c.rcClient.Redisoperator().RedisClusters(pod.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
+		if _, err := c.rcClient.RedisoperatorV1().RedisClusters(pod.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
 			if !apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("Unexpected error retrieving rediscluster %s/%s for pod %s/%s: %v", pod.Namespace, redisclusterName, pod.Namespace, pod.Name, err))
 				continue
@@ -144,7 +144,7 @@ func (c *GarbageCollector) collectRedisClusterServices() error {
 			continue
 		}
 		// RedisCluster couldn't be find in cache. Trying to get it via APIs.
-		if _, err := c.rcClient.Redisoperator().RedisClusters(service.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
+		if _, err := c.rcClient.RedisoperatorV1().RedisClusters(service.Namespace).Get(redisclusterName, metav1.GetOptions{}); err != nil {
 			if !apierrors.IsNotFound(err) {
 				errs = append(errs, fmt.Errorf("Unexpected error retrieving rediscluster %s/%s for service %s/%s: %v", service.Namespace, redisclusterName, service.Namespace, service.Name, err))
 				continue

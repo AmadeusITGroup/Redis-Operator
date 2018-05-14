@@ -10,6 +10,7 @@ import (
 
 	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
 	"github.com/amadeusitgroup/redis-operator/pkg/controller/clustering"
+	podctrl "github.com/amadeusitgroup/redis-operator/pkg/controller/pod"
 	"github.com/amadeusitgroup/redis-operator/pkg/controller/sanitycheck"
 	"github.com/amadeusitgroup/redis-operator/pkg/redis"
 )
@@ -80,24 +81,22 @@ func (c *Controller) manageRollingUpdate(admin redis.AdminInterface, cluster *ra
 		return true, nil
 	}
 
+	clusterPodSpecHash, err := podctrl.GenerateMD5Spec(&cluster.Spec.PodTemplate.Spec)
+	if err != nil {
+		return false, err
+	}
 	// pods with new version are ready it is time to migrate slots and key
 	newNodes := nodes.FilterByFunc(func(n *redis.Node) bool {
 		if n.Pod == nil {
 			return false
 		}
-		if comparePodSpec(&cluster.Spec.PodTemplate.Spec, &n.Pod.Spec) {
-			return true
-		}
-		return false
+		return comparePodSpecMD5Hash(clusterPodSpecHash, n.Pod)
 	})
 	oldNodes := nodes.FilterByFunc(func(n *redis.Node) bool {
 		if n.Pod == nil {
 			return false
 		}
-		if !comparePodSpec(&cluster.Spec.PodTemplate.Spec, &n.Pod.Spec) {
-			return true
-		}
-		return false
+		return !comparePodSpecMD5Hash(clusterPodSpecHash, n.Pod)
 	})
 	newMasterNodes, newSlaveNodes, newNoneNodes := clustering.ClassifyNodesByRole(newNodes)
 	oldMasterNodes, oldSlaveNodes, _ := clustering.ClassifyNodesByRole(oldNodes)

@@ -149,7 +149,7 @@ Every 2.0s: kubectl plugin rediscluster
 check the cluster status thanks to redis command `cluster info`:
 
 ```console
-$ kubectl exec $(kubectl get pod -l redis-operator.io/cluster-name=mycluster -o jsonpath="{.items[0].metadata.name}") -- redis-cli cluster info
+$ kubectl exec $(kubectl get pod -l redis-operator.k8s.io/cluster-name=mycluster -o jsonpath="{.items[0].metadata.name}") -- redis-cli cluster info
 cluster_state:ok
 cluster_slots_assigned:16384
 cluster_slots_ok:16384
@@ -167,7 +167,7 @@ cluster_stats_messages_pong_received:7003
 cluster_stats_messages_meet_received:5
 cluster_stats_messages_received:13993
 
-$ kubectl exec $(kubectl get pod -l redis-operator.io/cluster-name=mycluster -o jsonpath="{.items[0].metadata.name}") -- redis-cli cluster nodes
+$ kubectl exec $(kubectl get pod -l redis-operator.k8s.io/cluster-name=mycluster -o jsonpath="{.items[0].metadata.name}") -- redis-cli cluster nodes
 7e4d1efc89a8230fe67c039bdb4101d44585a56a 172.17.0.9:6379@16379 slave f73d9e04184a3ab5a83f7073b28f02d481818f6c 0 1518704528057 0 connected
 147a54a784e46152ab4de0b6351e9d7c0908ad49 172.17.0.7:6379@16379 master - 0 1518704527250 1 connected 5462-10923
 f73d9e04184a3ab5a83f7073b28f02d481818f6c 172.17.0.8:6379@16379 master - 0 1518704527250 0 connected 0-5461
