@@ -14,6 +14,7 @@ env:
   - IMAGE_NAME=traviscontroller
 go_import_path: github.com/amadeusitgroup/redis-operator
 before_install:
+#  install nsenter for helm and port forwarding
 - sudo apt-get -qq update
 - sudo apt-get install -y socat
 - docker run --rm jpetazzo/nsenter cat /nsenter > /tmp/nsenter && chmod +x /tmp/nsenter
@@ -56,4 +57,4 @@ jobs:
     - cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 200
     - helm delete end2end-test
 after_success:
-- bash <(curl -s https://codecov.io/bash) -f $TRAVIS_BUILD_DIR/.cover/cover.out
+- bash <(curl -s https://codecov.io/bash)

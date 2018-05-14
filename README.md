@@ -4,6 +4,9 @@
 
 ### Build Status
 [![Build Status](https://travis-ci.org/AmadeusITGroup/Redis-Operator.svg?branch=master)](https://travis-ci.org/AmadeusITGroup/Redis-Operator)
+[![Go Report Card](https://goreportcard.com/badge/github.com/amadeusitgroup/redis-operator)](https://goreportcard.com/report/github.com/amadeusitgroup/redis-operator)
+[![codecov](https://codecov.io/gh/amadeusitgroup/redis-operator/branch/master/graph/badge.svg)](https://codecov.io/gh/amadeusitgroup/redis-operator)
+
 
 
 ## Project status: alpha

@@ -36,4 +36,3 @@ comment:
 
 ignore:
   - "test/**/*"  # ignore folders and all its contents
-  - "vendor/**/*"  # ignore folders and all its contents
