@@ -353,7 +353,7 @@ func testAndWaitConnection(addr string, maxWait time.Duration) error {
 
 func getRedisNodesAddrs(kubeClient clientset.Interface, namespace, service string) ([]string, error) {
 	addrs := []string{}
-	eps, err := kubeClient.Core().Endpoints(namespace).Get(service, meta_v1.GetOptions{})
+	eps, err := kubeClient.CoreV1().Endpoints(namespace).Get(service, meta_v1.GetOptions{})
 	if err != nil {
 		return addrs, err
 	}

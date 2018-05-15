@@ -1,6 +1,7 @@
 package pod
 
 import (
+	"fmt"
 	"k8s.io/apimachinery/pkg/labels"
 
 	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
@@ -9,11 +10,16 @@ import (
 // GetLabelsSet return labels associated to the redis-node pods
 func GetLabelsSet(rediscluster *rapi.RedisCluster) (labels.Set, error) {
 	desiredLabels := labels.Set{}
+	if rediscluster == nil {
+		return desiredLabels, fmt.Errorf("redisluster nil pointer")
+	}
 	if rediscluster.Spec.AdditionalLabels != nil {
 		desiredLabels = rediscluster.Spec.AdditionalLabels
 	}
-	for k, v := range rediscluster.Spec.PodTemplate.Labels {
-		desiredLabels[k] = v
+	if rediscluster.Spec.PodTemplate != nil {
+		for k, v := range rediscluster.Spec.PodTemplate.Labels {
+			desiredLabels[k] = v
+		}
 	}
 	desiredLabels[rapi.ClusterNameLabelKey] = rediscluster.Name // add rediscluster name to the Pod labels
 	return desiredLabels, nil

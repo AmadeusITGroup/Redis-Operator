@@ -18,7 +18,7 @@ spec:
           emptyDir: {}
       containers:
         - name: redis
-          image: "redis-operator/redisnode:latest"
+          image: "redisoperator/redisnode:latest"
           args: ["--v=6", 
             "--logtostderr=true", 
             "--alsologtostderr=true",

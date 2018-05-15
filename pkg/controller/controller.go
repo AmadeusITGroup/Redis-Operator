@@ -62,7 +62,7 @@ func NewController(cfg *Config, kubeClient clientset.Interface, redisClient rcli
 
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(glog.Infof)
-	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: v1core.New(kubeClient.Core().RESTClient()).Events("")})
+	eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: v1core.New(kubeClient.CoreV1().RESTClient()).Events("")})
 
 	serviceInformer := kubeInformer.Core().V1().Services()
 	podInformer := kubeInformer.Core().V1().Pods()
@@ -406,6 +406,9 @@ func (c *Controller) buildClusterStatus(admin redis.AdminInterface, clusterInfos
 		if counter < minReplicationFactor {
 			minReplicationFactor = counter
 		}
+	}
+	if len(nbSlaveByMaster) == 0 {
+		minReplicationFactor = 0
 	}
 	clusterStatus.MaxReplicationFactor = int32(maxReplicationFactor)
 	clusterStatus.MinReplicationFactor = int32(minReplicationFactor)

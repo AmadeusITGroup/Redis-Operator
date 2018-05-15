@@ -62,13 +62,13 @@ func main() {
 
 	var rcs *v1.RedisClusterList
 	if clusterName == "" {
-		rcs, err = redisClient.RedisV1().RedisClusters(namespace).List(meta_v1.ListOptions{})
+		rcs, err = redisClient.RedisoperatorV1().RedisClusters(namespace).List(meta_v1.ListOptions{})
 		if err != nil {
 			glog.Fatalf("unable to list rediscluster err:%v", err)
 		}
 	} else {
 		rcs = &v1.RedisClusterList{}
-		rc, err := redisClient.RedisV1().RedisClusters(namespace).Get(clusterName, meta_v1.GetOptions{})
+		rc, err := redisClient.RedisoperatorV1().RedisClusters(namespace).Get(clusterName, meta_v1.GetOptions{})
 		if err != nil {
 			glog.Fatalf("unable to list rediscluster err:%v", err)
 		}
