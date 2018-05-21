@@ -1,0 +1,45 @@
+project_name: redis-operator
+release:
+  github:
+    owner: amadeusitgroup
+    name: redis-operator
+builds:
+- goos:
+  - linux
+  goarch:
+  - amd64
+  main: ./cmd/operator/main.go
+  ldflags: -s -w -X github.com/amadeusitgroup/redis-operator/pkg/utils.VERSION={{.Version}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.COMMIT={{.Commit}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.BUILDTIME={{.Date}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.TAG={{.Tag}}
+  binary: operator
+- goos:
+  - linux
+  goarch:
+  - amd64
+  main: ./cmd/redisnode/main.go
+  ldflags: -s -w -X github.com/amadeusitgroup/redis-operator/pkg/utils.VERSION={{.Version}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.COMMIT={{.Commit}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.BUILDTIME={{.Date}} -X github.com/amadeusitgroup/redis-operator/pkg/utils.TAG={{.Tag}}
+  binary: redisnode
+dockers:
+- image: redisoperator/operator
+  dockerfile: docker/operator/Dockerfile
+  goos: linux
+  goarch: amd64
+  goarm: ''
+  binary: operator
+  tag_templates:
+    - '{{ .Tag }}'
+    - latest
+- image: redisoperator/redisnode
+  dockerfile: ./docker/redisnode/redisnode.Dockerfile
+  goos: linux
+  goarch: amd64
+  goarm: ''
+  binary: redisnode
+  tag_templates:
+    - '{{ .Tag }}'
+    - latest
+  extra_files:
+  - docker/redisnode/redis-cluster.conf
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
