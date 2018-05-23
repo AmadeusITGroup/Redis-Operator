@@ -32,4 +32,5 @@ _testmain.go
 /dist
 /test/e2e/e2e.test
 /.envrc
+/CHANGELOG.md.bak
 

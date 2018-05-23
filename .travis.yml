@@ -56,5 +56,24 @@ jobs:
     - helm install --wait --version $TAG -n end2end-test --set image.pullPolicy=IfNotPresent --set image.tag=$TAG chart/redis-operator
     - cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 200
     - helm delete end2end-test
+  - stage: release
+    name: release
+    script:
+      - docker login -u "$DOCKER_USERNAME" p "$DOCKER_PASSWORD"
+      - curl -sL https://git.io/goreleaser | bash
+    deploy:
+    - provider: releases
+      api_key:
+        secure: $GITHUB_TOKEN
+      skip_cleanup: true
+      file:
+      - docs/helm-redis-cluster-$TAG.tgz
+      - docs/helm-redis-operator-$TAG.tgz
+      on:
+        tags: true
+        branches:
+          only:
+          - master
+          - /^v\d+(\.\d+)+$/
 after_success:
 - bash <(curl -s https://codecov.io/bash)
