@@ -1,6 +1,6 @@
 # Redis-Operator
 
-![logo](.docs/imgs/logo.png)
+![logo](imgs/logo.png)
 
 ### Build Status
 [![Build Status](https://travis-ci.org/AmadeusITGroup/Redis-Operator.svg?branch=master)](https://travis-ci.org/AmadeusITGroup/Redis-Operator)
@@ -19,7 +19,7 @@ The aim of this project is to ease the deployment and operations of a [Redis-clu
 
 The Redis-cluster will be deployed thanks to a unique deployment. Each node of the Redis-cluster is running in its own Pod; At startup, each node has no active role (not slave nor master with slot), it just joins the cluster as a master without slot. See representation in the schema below 
 
-![Initial state](.docs/imgs/overview_1.png)
+![Initial state](imgs/overview_1.png)
 
 At this point you have your redis process running, each node is aware of each other, but only one master prossess all slots.
 
@@ -35,7 +35,7 @@ If you want to take part of the development, you can follow the document: [CONTR
 
 ## Deployment
 
-you can found checkt the [docs/cookbook.md](.docs/cookbook.md) that is a step by step commands cookbook to test/demo the deployment of the operator and a redis-cluster with minikube.
+you can found checkt the [docs/cookbook.md](cookbook.md) that is a step by step commands cookbook to test/demo the deployment of the operator and a redis-cluster with minikube.
 
 ### Deployment environment requirements
 
@@ -83,7 +83,7 @@ helm install --name mycluster charts/redis-cluster --set numberOfMaster=3 --set 
 
 #### Install the kubctl redis-cluster plugin
 
-docs available [here](.docs/kubectl-plugin.md).
+docs available [here](kubectl-plugin.md).
 
 ### Deployment from source code
 
