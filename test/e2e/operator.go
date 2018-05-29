@@ -43,7 +43,10 @@ var _ = Describe("RedisCluster CRUD", func() {
 
 		Eventually(framework.HOCreateRedisCluster(redisClient, rediscluster, clusterNs), "5s", "1s").ShouldNot(HaveOccurred())
 
+		Eventually(framework.HOIsRedisClusterPodDisruptionBudgetCreated(kubeClient, rediscluster), "5s", "1s").ShouldNot(HaveOccurred())
+
 		Eventually(framework.HOIsRedisClusterStarted(redisClient, rediscluster, clusterNs), "5m", "5s").ShouldNot(HaveOccurred())
+
 	})
 
 	Context("when the Redis Cluster is created properly", func() {

@@ -139,6 +139,12 @@ func (op *RedisOperator) configureHealth() {
 		}
 		return fmt.Errorf("Service cache not sync")
 	})
+	op.health.AddReadinessCheck("PodDiscruptionBudget_cache_sync", func() error {
+		if op.controller.PodDiscruptionBudgetSynced() {
+			return nil
+		}
+		return fmt.Errorf("PodDiscruptionBudget cache not sync")
+	})
 }
 
 func (op *RedisOperator) runHTTPServer(stop <-chan struct{}) error {
