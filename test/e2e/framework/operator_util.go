@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/glog"
 
-	. "github.com/onsi/gomega"
+	gomega "github.com/onsi/gomega"
 
 	"github.com/amadeusitgroup/redis-operator/pkg/api/redis"
 	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
@@ -109,17 +109,17 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 // BuildAndSetClients builds and initilize rediscluster and kube client
 func BuildAndSetClients() (versioned.Interface, clientset.Interface) {
 	f, err := NewFramework()
-	Ω(err).ShouldNot(HaveOccurred())
-	Ω(f).ShouldNot(BeNil())
+	gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+	gomega.Ω(f).ShouldNot(gomega.BeNil())
 
 	kubeClient, err := f.kubeClient()
-	Ω(err).ShouldNot(HaveOccurred())
-	Ω(kubeClient).ShouldNot(BeNil())
+	gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+	gomega.Ω(kubeClient).ShouldNot(gomega.BeNil())
 	Logf("Check whether RedisCluster resource is registered...")
 
 	redisClient, err := f.redisOperatorClient()
-	Ω(err).ShouldNot(HaveOccurred())
-	Ω(redisClient).ShouldNot(BeNil())
+	gomega.Ω(err).ShouldNot(gomega.HaveOccurred())
+	gomega.Ω(redisClient).ShouldNot(gomega.BeNil())
 	return redisClient, kubeClient
 }
 
@@ -305,6 +305,19 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 			if err != nil {
 				return err
 			}
+		}
+		return nil
+	}
+}
+
+// HOIsRedisClusterPodDisruptionBudgetCreated is an higher order func that returns the func that checks whether PodDisruptionBudget associated to the
+// the RedisCluster have been created properly.
+func HOIsRedisClusterPodDisruptionBudgetCreated(client clientset.Interface, rediscluster *rapi.RedisCluster) func() error {
+	return func() error {
+		_, err := client.PolicyV1beta1().PodDisruptionBudgets(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		if err != nil {
+			Logf("Cannot get PodDisruptionBudget associated to the rediscluster:%s/%s, err:%v", rediscluster.Namespace, rediscluster.Name, err)
+			return err
 		}
 		return nil
 	}

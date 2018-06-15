@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	apiv1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -19,6 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
 	corev1listers "k8s.io/client-go/listers/core/v1"
+	policyv1listers "k8s.io/client-go/listers/policy/v1beta1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 
@@ -45,8 +47,12 @@ type Controller struct {
 	serviceLister corev1listers.ServiceLister
 	ServiceSynced cache.InformerSynced
 
-	podControl     pod.RedisClusterControlInteface
-	serviceControl ServicesControlInterface
+	podDisruptionBudgetLister  policyv1listers.PodDisruptionBudgetLister
+	PodDiscruptionBudgetSynced cache.InformerSynced
+
+	podControl                 pod.RedisClusterControlInteface
+	serviceControl             ServicesControlInterface
+	podDisruptionBudgetControl PodDisruptionBudgetsControlInterface
 
 	updateHandler func(*rapi.RedisCluster) (*rapi.RedisCluster, error) // callback to update RedisCluster. Added as member for testing
 
@@ -67,16 +73,19 @@ func NewController(cfg *Config, kubeClient clientset.Interface, redisClient rcli
 	serviceInformer := kubeInformer.Core().V1().Services()
 	podInformer := kubeInformer.Core().V1().Pods()
 	redisInformer := rInformer.Redisoperator().V1().RedisClusters()
+	podDisruptionBudgetInformer := kubeInformer.Policy().V1beta1().PodDisruptionBudgets()
 
 	ctrl := &Controller{
-		kubeClient:         kubeClient,
-		redisClient:        redisClient,
-		redisClusterLister: redisInformer.Lister(),
-		RedisClusterSynced: redisInformer.Informer().HasSynced,
-		podLister:          podInformer.Lister(),
-		PodSynced:          podInformer.Informer().HasSynced,
-		serviceLister:      serviceInformer.Lister(),
-		ServiceSynced:      serviceInformer.Informer().HasSynced,
+		kubeClient:                 kubeClient,
+		redisClient:                redisClient,
+		redisClusterLister:         redisInformer.Lister(),
+		RedisClusterSynced:         redisInformer.Informer().HasSynced,
+		podLister:                  podInformer.Lister(),
+		PodSynced:                  podInformer.Informer().HasSynced,
+		serviceLister:              serviceInformer.Lister(),
+		ServiceSynced:              serviceInformer.Informer().HasSynced,
+		podDisruptionBudgetLister:  podDisruptionBudgetInformer.Lister(),
+		PodDiscruptionBudgetSynced: podDisruptionBudgetInformer.Informer().HasSynced,
 
 		queue:    workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rediscluster"),
 		recorder: eventBroadcaster.NewRecorder(scheme.Scheme, apiv1.EventSource{Component: "rediscluster-controller"}),
@@ -103,6 +112,7 @@ func NewController(cfg *Config, kubeClient clientset.Interface, redisClient rcli
 	ctrl.updateHandler = ctrl.updateRedisCluster
 	ctrl.podControl = pod.NewRedisClusterControl(ctrl.podLister, ctrl.kubeClient, ctrl.recorder)
 	ctrl.serviceControl = NewServicesControl(ctrl.kubeClient, ctrl.recorder)
+	ctrl.podDisruptionBudgetControl = NewPodDisruptionBudgetsControl(ctrl.kubeClient, ctrl.recorder)
 
 	return ctrl
 }
@@ -220,6 +230,26 @@ func (c *Controller) getRedisClusterService(redisCluster *rapi.RedisCluster) (*a
 	return svc, nil
 }
 
+func (c *Controller) getRedisClusterPodDisruptionBudget(redisCluster *rapi.RedisCluster) (*policyv1.PodDisruptionBudget, error) {
+	podDisruptionBudgetName := redisCluster.Name
+	labels, err := pod.GetLabelsSet(redisCluster)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get cluster label, err: %v ", err)
+	}
+
+	pdbList, err := c.podDisruptionBudgetLister.PodDisruptionBudgets(redisCluster.Namespace).List(labels.AsSelector())
+	if err != nil {
+		return nil, fmt.Errorf("couldn't list PodDisruptionBudget with label:%s, err:%v ", labels.String(), err)
+	}
+	var pdb *policyv1.PodDisruptionBudget
+	for i, p := range pdbList {
+		if p.Name == podDisruptionBudgetName {
+			pdb = pdbList[i]
+		}
+	}
+	return pdb, nil
+}
+
 func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue bool, err error) {
 	glog.V(6).Info("syncCluster START")
 	defer glog.V(6).Info("syncCluster STOP")
@@ -232,6 +262,18 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 	if redisClusterService == nil {
 		if _, err = c.serviceControl.CreateRedisClusterService(rediscluster); err != nil {
 			glog.Errorf("RedisCluster-Operator.sync unable to create service associated to the RedisCluster: %s/%s", rediscluster.Namespace, rediscluster.Name)
+			return forceRequeue, err
+		}
+	}
+
+	redisClusterPodDisruptionBudget, err := c.getRedisClusterPodDisruptionBudget(rediscluster)
+	if err != nil {
+		glog.Errorf("RedisCluster-Operator.sync unable to retrieves podDisruptionBudget associated to the RedisCluster: %s/%s", rediscluster.Namespace, rediscluster.Name)
+		return forceRequeue, err
+	}
+	if redisClusterPodDisruptionBudget == nil {
+		if _, err = c.podDisruptionBudgetControl.CreateRedisClusterPodDisruptionBudget(rediscluster); err != nil {
+			glog.Errorf("RedisCluster-Operator.sync unable to create podDisruptionBudget associated to the RedisCluster: %s/%s", rediscluster.Namespace, rediscluster.Name)
 			return forceRequeue, err
 		}
 	}
@@ -429,7 +471,7 @@ func (c *Controller) enqueue(rediscluster *rapi.RedisCluster) {
 }
 
 func (c *Controller) updateRedisCluster(rediscluster *rapi.RedisCluster) (*rapi.RedisCluster, error) {
-	rc, err := c.redisClient.Redisoperator().RedisClusters(rediscluster.Namespace).Update(rediscluster)
+	rc, err := c.redisClient.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(rediscluster)
 	if err != nil {
 		glog.Errorf("updateRedisCluster cluster: [%v] error: %v", *rediscluster, err)
 		return rc, err

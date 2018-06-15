@@ -54,8 +54,10 @@ jobs:
     - docker images
     - kubectl get pods --all-namespaces
     - helm install --wait --version $TAG -n end2end-test --set image.pullPolicy=IfNotPresent --set image.tag=$TAG chart/redis-operator
+    - kubectl logs -f $(kubectl get pod -l app=redis-operator --output=jsonpath={.items[0].metadata.name}) > /tmp/tmp.operator.logs &
     - cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 200
     - helm delete end2end-test
+    - cat /tmp/tmp.operator.logs
   - stage: release
     name: release
     script:
