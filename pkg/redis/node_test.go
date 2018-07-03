@@ -49,6 +49,7 @@ func TestNode_ToAPINode(t *testing.T) {
 				IP:      "1.2.3.4",
 				PodName: "name1",
 				Role:    v1.RedisClusterNodeRoleNone,
+				Slots:   []string{},
 			},
 		},
 		{
@@ -66,6 +67,7 @@ func TestNode_ToAPINode(t *testing.T) {
 				IP:      "1.2.3.4",
 				PodName: "name1",
 				Role:    v1.RedisClusterNodeRoleMaster,
+				Slots:   []string{},
 			},
 		},
 		{
@@ -84,6 +86,7 @@ func TestNode_ToAPINode(t *testing.T) {
 				IP:      "1.2.3.4",
 				PodName: "name1",
 				Role:    v1.RedisClusterNodeRoleSlave,
+				Slots:   []string{},
 			},
 		},
 	}

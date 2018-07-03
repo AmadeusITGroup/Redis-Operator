@@ -40,12 +40,12 @@ type RedisClusterList struct {
 
 // RedisClusterSpec contains RedisCluster specification
 type RedisClusterSpec struct {
-	NumberOfMaster    *int32 `json:"numberOfMaster, omitempty"`
-	ReplicationFactor *int32 `json:"replicationFactor, omitempty"`
+	NumberOfMaster    *int32 `json:"numberOfMaster,omitempty"`
+	ReplicationFactor *int32 `json:"replicationFactor,omitempty"`
 
 	// ServiceName name used to create the Kubernetes Service that reference the Redis Cluster nodes.
 	// if ServiceName is empty, the RedisCluster.Name will be use for creating the service.
-	ServiceName string `json:"serviceName, omitempty"`
+	ServiceName string `json:"serviceName,omitempty"`
 
 	// PodTemplate contains the pod specificaton that should run the redis-server process
 	PodTemplate *kapiv1.PodTemplateSpec `json:"podTemplate,omitempty"`
@@ -92,16 +92,16 @@ type RedisClusterCondition struct {
 // RedisClusterClusterStatus represent the Redis Cluster status
 type RedisClusterClusterStatus struct {
 	Status               ClusterStatus `json:"status"`
-	NumberOfMaster       int32         `json:"numberOfMaster, omitempty"`
-	MinReplicationFactor int32         `json:"minReplicationFactor, omitempty"`
-	MaxReplicationFactor int32         `json:"maxReplicationFactor, omitempty"`
+	NumberOfMaster       int32         `json:"numberOfMaster,omitempty"`
+	MinReplicationFactor int32         `json:"minReplicationFactor,omitempty"`
+	MaxReplicationFactor int32         `json:"maxReplicationFactor,omitempty"`
 
-	NodesPlacement NodesPlacementInfo `json:"nodesPlacementInfo, omitempty"`
+	NodesPlacement NodesPlacementInfo `json:"nodesPlacementInfo,omitempty"`
 
 	// In theory, we always have NbPods > NbRedisRunning > NbPodsReady
-	NbPods         int32 `json:"nbPods, omitempty"`
-	NbPodsReady    int32 `json:"nbPodsReady, omitempty"`
-	NbRedisRunning int32 `json:"nbRedisNodesRunning, omitempty"`
+	NbPods         int32 `json:"nbPods,omitempty"`
+	NbPodsReady    int32 `json:"nbPodsReady,omitempty"`
+	NbRedisRunning int32 `json:"nbRedisNodesRunning,omitempty"`
 
 	Nodes []RedisClusterNode `json:"nodes"`
 }
@@ -140,8 +140,8 @@ type RedisClusterNode struct {
 	Role      RedisClusterNodeRole `json:"role"`
 	IP        string               `json:"ip"`
 	Port      string               `json:"port"`
-	Slots     []string             `json:"slots, omitempty"`
-	MasterRef string               `json:"masterRef, omitempty"`
+	Slots     []string             `json:"slots,omitempty"`
+	MasterRef string               `json:"masterRef,omitempty"`
 	PodName   string               `json:"podName"`
 	Pod       *kapiv1.Pod          `json:"-"`
 }

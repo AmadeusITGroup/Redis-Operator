@@ -2,30 +2,29 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/golang/glog"
 	"github.com/olekukonko/tablewriter"
 
 	kapiv1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	v1 "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
 	rclient "github.com/amadeusitgroup/redis-operator/pkg/client"
 )
 
 func main() {
-	cmdBin := "kubectl"
-	if val := os.Getenv("KUBECTL_PLUGINS_CALLER"); val != "" {
-		cmdBin = val
-	}
-
-	namespace := "default"
+	namespace := ""
 	if val := os.Getenv("KUBECTL_PLUGINS_CURRENT_NAMESPACE"); val != "" {
 		namespace = val
 	}
@@ -35,44 +34,40 @@ func main() {
 		clusterName = val
 	}
 
-	kubeConfigBytes, err := exec.Command(cmdBin, "config", "view").Output()
-	if err != nil {
-		log.Fatal(err)
+	kubeconfigFilePath := getKubeConfigDefaultPath(getHomePath())
+	if len(kubeconfigFilePath) == 0 {
+		log.Fatal("error initializing config. The KUBECONFIG environment variable must be defined.")
 	}
 
-	tmpConf, err := ioutil.TempFile("", "example")
+	config, err := configFromPath(kubeconfigFilePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error obtaining kubectl config: %v", err)
 	}
 
-	defer os.Remove(tmpConf.Name()) // clean up
-	if _, err = tmpConf.Write(kubeConfigBytes); err != nil {
-		log.Fatal(err)
-	}
-	// use the current context in kubeconfig
-	kubeConfig, err := clientcmd.BuildConfigFromFlags("", tmpConf.Name())
+	rest, err := config.ClientConfig()
 	if err != nil {
-		panic(err.Error())
+		log.Fatalf(err.Error())
 	}
 
-	redisClient, err := rclient.NewClient(kubeConfig)
+	redisClient, err := rclient.NewClient(rest)
 	if err != nil {
 		glog.Fatalf("Unable to init redis.clientset from kubeconfig:%v", err)
 	}
 
-	var rcs *v1.RedisClusterList
+	rcs := &v1.RedisClusterList{}
 	if clusterName == "" {
 		rcs, err = redisClient.RedisoperatorV1().RedisClusters(namespace).List(meta_v1.ListOptions{})
 		if err != nil {
-			glog.Fatalf("unable to list rediscluster err:%v", err)
+			glog.Fatalf("unable to list rediscluster:%s err:%v", err)
 		}
 	} else {
-		rcs = &v1.RedisClusterList{}
 		rc, err := redisClient.RedisoperatorV1().RedisClusters(namespace).Get(clusterName, meta_v1.GetOptions{})
-		if err != nil {
-			glog.Fatalf("unable to list rediscluster err:%v", err)
+		if err == nil && rc != nil {
+			rcs.Items = append(rcs.Items, *rc)
 		}
-		rcs.Items = append(rcs.Items, *rc)
+		if err != nil && !apierrors.IsNotFound(err) {
+			glog.Fatalf("unable to get rediscluster '%s' err:%v", clusterName, err)
+		}
 	}
 
 	data := [][]string{}
@@ -151,4 +146,60 @@ func buildMasterStatus(rc *v1.RedisCluster) string {
 func buildReplicationStatus(rc *v1.RedisCluster) string {
 	spec := *rc.Spec.ReplicationFactor
 	return fmt.Sprintf("%d-%d/%d", rc.Status.Cluster.MinReplicationFactor, rc.Status.Cluster.MaxReplicationFactor, spec)
+}
+
+func configFromPath(path string) (clientcmd.ClientConfig, error) {
+	rules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: path}
+	credentials, err := rules.Load()
+	if err != nil {
+		return nil, fmt.Errorf("the provided credentials %q could not be loaded: %v", path, err)
+	}
+
+	overrides := &clientcmd.ConfigOverrides{
+		Context: clientcmdapi.Context{
+			Namespace: os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_NAMESPACE"),
+		},
+	}
+
+	var cfg clientcmd.ClientConfig
+	context := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONTEXT")
+	if len(context) > 0 {
+		rules := clientcmd.NewDefaultClientConfigLoadingRules()
+		cfg = clientcmd.NewNonInteractiveClientConfig(*credentials, context, overrides, rules)
+	} else {
+		cfg = clientcmd.NewDefaultClientConfig(*credentials, overrides)
+	}
+
+	return cfg, nil
+}
+
+func getHomePath() string {
+	home := os.Getenv("HOME")
+	if runtime.GOOS == "windows" {
+		home = os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
+		if home == "" {
+			home = os.Getenv("USERPROFILE")
+		}
+	}
+
+	return home
+}
+
+func getKubeConfigDefaultPath(home string) string {
+	kubeconfig := filepath.Join(home, ".kube", "config")
+
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if len(kubeconfigEnv) > 0 {
+		kubeconfig = kubeconfigEnv
+	}
+
+	configFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONFIG")
+	kubeConfigFile := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_KUBECONFIG")
+	if len(configFile) > 0 {
+		kubeconfig = configFile
+	} else if len(kubeConfigFile) > 0 {
+		kubeconfig = kubeConfigFile
+	}
+
+	return kubeconfig
 }

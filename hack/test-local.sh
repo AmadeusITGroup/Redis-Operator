@@ -9,11 +9,10 @@ minikube start --extra-config=apiserver.Authorization.Mode=RBAC
 echo "Create the missing rolebinding for k8s dashboard"
 kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 
-echo "Create the cluster role binding for the helm tiller"
-kubectl create clusterrolebinding tiller-cluster-admin  --clusterrole=cluster-admin --serviceaccount=kube-system:default
-
 echo "Init the helm tiller"
-helm init
+kubectl -n kube-system create sa tiller
+kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+helm init --service-account tiller
 
 printf "Waiting for tiller deployment to complete."
 until [ $(kubectl get deployment -n kube-system tiller-deploy -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
@@ -29,7 +28,7 @@ make TAG=$TAG container
 docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:4.0
 
 echo "create RBAC for rediscluster"
-kubectl create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
+#kubectl create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
 
 printf  "create and install the redis operator in a dedicate namespace"
 until helm install -n operator --set image.tag=$TAG chart/redis-operator; do sleep 1; printf "."; done
