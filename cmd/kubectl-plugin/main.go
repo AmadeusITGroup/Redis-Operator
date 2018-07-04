@@ -58,7 +58,7 @@ func main() {
 	if clusterName == "" {
 		rcs, err = redisClient.RedisoperatorV1().RedisClusters(namespace).List(meta_v1.ListOptions{})
 		if err != nil {
-			glog.Fatalf("unable to list rediscluster:%s err:%v", err)
+			glog.Fatalf("unable to list redisclusters:%v", err)
 		}
 	} else {
 		rc, err := redisClient.RedisoperatorV1().RedisClusters(namespace).Get(clusterName, meta_v1.GetOptions{})
@@ -66,7 +66,7 @@ func main() {
 			rcs.Items = append(rcs.Items, *rc)
 		}
 		if err != nil && !apierrors.IsNotFound(err) {
-			glog.Fatalf("unable to get rediscluster '%s' err:%v", clusterName, err)
+			glog.Fatalf("unable to get rediscluster %s: %v", clusterName, err)
 		}
 	}
 
@@ -161,16 +161,12 @@ func configFromPath(path string) (clientcmd.ClientConfig, error) {
 		},
 	}
 
-	var cfg clientcmd.ClientConfig
 	context := os.Getenv("KUBECTL_PLUGINS_GLOBAL_FLAG_CONTEXT")
 	if len(context) > 0 {
 		rules := clientcmd.NewDefaultClientConfigLoadingRules()
-		cfg = clientcmd.NewNonInteractiveClientConfig(*credentials, context, overrides, rules)
-	} else {
-		cfg = clientcmd.NewDefaultClientConfig(*credentials, overrides)
+		return clientcmd.NewNonInteractiveClientConfig(*credentials, context, overrides, rules), nil
 	}
-
-	return cfg, nil
+	return clientcmd.NewDefaultClientConfig(*credentials, overrides), nil
 }
 
 func getHomePath() string {
