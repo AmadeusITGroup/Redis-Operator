@@ -398,6 +398,7 @@ func (c *Controller) buildClusterStatus(admin redis.AdminInterface, clusterInfos
 			PodName: pod.Name,
 			IP:      pod.Status.PodIP,
 			Pod:     pod,
+			Slots:   []string{},
 		}
 		// find corresponding Redis node
 		redisNodes, err := clusterInfos.GetNodes().GetNodesByFunc(func(node *redis.Node) bool {

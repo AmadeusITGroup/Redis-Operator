@@ -167,6 +167,7 @@ func (n *Node) ToAPINode() v1.RedisClusterNode {
 		IP:      n.IP,
 		PodName: n.Pod.Name,
 		Role:    n.GetRole(),
+		Slots:   []string{},
 	}
 
 	return apiNode
