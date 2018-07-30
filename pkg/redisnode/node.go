@@ -62,7 +62,7 @@ func (n *Node) UpdateNodeConfigFile() error {
 			return err
 		}
 	}
-	if n.config.RedisMaxMemoryPolicy != "noeviction" {
+	if n.config.RedisMaxMemoryPolicy != RedisMaxMemoryPolicyDefault {
 		err = n.addSettingInConfigFile(fmt.Sprintf("maxmemory-policy %s", n.config.RedisMaxMemoryPolicy))
 		if err != nil {
 			return err
