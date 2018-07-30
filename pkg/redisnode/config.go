@@ -20,8 +20,8 @@ const (
 	HTTPServerAddrDefault = "0.0.0.0:8080"
 	// RedisMaxMemoryDefault default redis max memory
 	RedisMaxMemoryDefault = 0
-	// RedisMaxMemoryDefaultPolicy default redis max memory evition policy
-	RedisMaxMemoryDefaultPolicy = "noeviction"
+	// RedisMaxMemoryPolicyDefault default redis max memory evition policy
+	RedisMaxMemoryPolicyDefault = "noeviction"
 )
 
 // Config contains configuration for redis-operator
@@ -55,7 +55,7 @@ func (c *Config) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&c.RedisServerBin, "bin", RedisServerBinDefault, "redis server binary file name")
 	fs.StringVar(&c.RedisServerPort, "port", RedisServerPortDefault, "redis server listen port")
 	fs.Uint32Var(&c.RedisMaxMemory, "max-memory", RedisMaxMemoryDefault, "redis max memory")
-	fs.StringVar(&c.RedisMaxMemoryPolicy, "max-memory-policy", RedisMaxMemoryDefaultPolicy, "redis max memory evition policy")
+	fs.StringVar(&c.RedisMaxMemoryPolicy, "max-memory-policy", RedisMaxMemoryPolicyDefault, "redis max memory evition policy")
 
 	fs.StringVar(&c.HTTPServerAddr, "http-addr", HTTPServerAddrDefault, "the http server listen address")
 
