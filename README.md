@@ -25,7 +25,7 @@ At this point you have your redis process running, each node is aware of each ot
 
 In order to configure properly the different redis-servers and setup the redis cluster, we introduce the `Redis-Operator`.
 
-The `redis-operator` is watching a new kink of Custom-Resource `RedisCluster` that stores the redis-cluster configuration: number of masters, and the replication factor (number of slaves by master) and the pod template. Then the `redis-operator` tries to apply this configuration to the set of redis-server processes. If the number of redis-servers doesn't correspond to the provided configuration, the manager scales the redis-node pods to obtain the proper number of redis-nodes.
+The `redis-operator` is watching a new kind of Custom-Resource `RedisCluster` that stores the redis-cluster configuration: number of masters, and the replication factor (number of slaves by master) and the pod template. Then the `redis-operator` tries to apply this configuration to the set of redis-server processes. If the number of redis-servers doesn't correspond to the provided configuration, the manager scales the redis-node pods to obtain the proper number of redis-nodes.
 
 Then reconciliation is constantly done between the state of the cluster and the configuration stored in the `RedisCluster` CR.
 
