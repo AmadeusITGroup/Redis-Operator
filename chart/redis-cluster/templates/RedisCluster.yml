@@ -28,6 +28,9 @@ spec:
 {{- if .Values.resources }}
              "--max-memory=$(MEMORY_REQUEST)",
 {{- end }}
+{{- if .Values.maxMemoryPolicy }}
+             "--max-memory-policy={{ .Values.maxMemoryPolicy }}",
+{{- end }}
             "--cluster-node-timeout=2000"]
           imagePullPolicy: IfNotPresent
           ports:
