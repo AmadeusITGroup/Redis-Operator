@@ -62,6 +62,12 @@ func (n *Node) UpdateNodeConfigFile() error {
 			return err
 		}
 	}
+	if n.config.RedisMaxMemoryPolicy != RedisMaxMemoryPolicyDefault {
+		err = n.addSettingInConfigFile(fmt.Sprintf("maxmemory-policy %s", n.config.RedisMaxMemoryPolicy))
+		if err != nil {
+			return err
+		}
+	}
 	err = n.addSettingInConfigFile("bind " + n.IP + " 127.0.0.1")
 	if err != nil {
 		return err

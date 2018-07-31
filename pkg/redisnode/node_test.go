@@ -22,7 +22,8 @@ func TestUpdateNodeConfigFile(t *testing.T) {
 	a := admin.NewFakeAdmin([]string{})
 	c := Config{
 		RedisServerPort: "1234",
-		RedisMaxMemory:  0,
+		RedisMaxMemory:  1048576,
+		RedisMaxMemoryPolicy:  "allkeys-lru",
 		Redis: config.Redis{
 			ClusterNodeTimeout: 321,
 			ConfigFile:         configfile.Name(),
@@ -38,7 +39,7 @@ func TestUpdateNodeConfigFile(t *testing.T) {
 
 	// checking file content
 	content, _ := ioutil.ReadFile(configfile.Name())
-	expected := "port 1234\nbind " + node.IP + " 127.0.0.1\ncluster-node-timeout 321\n"
+	expected := "port 1234\nmaxmemory 1048576\nmaxmemory-policy allkeys-lru\nbind " + node.IP + " 127.0.0.1\ncluster-node-timeout 321\n"
 	if expected != string(content) {
 		t.Errorf("Wrong file content, expected '%s', got '%s'", expected, string(content))
 	}
