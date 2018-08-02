@@ -54,8 +54,8 @@ func (c *Config) AddFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&c.RedisServerBin, "bin", RedisServerBinDefault, "redis server binary file name")
 	fs.StringVar(&c.RedisServerPort, "port", RedisServerPortDefault, "redis server listen port")
-	fs.Uint32Var(&c.RedisMaxMemory, "max-memory", RedisMaxMemoryDefault, "redis max memory")
-	fs.StringVar(&c.RedisMaxMemoryPolicy, "max-memory-policy", RedisMaxMemoryPolicyDefault, "redis max memory evition policy")
+	fs.Uint32Var(&c.RedisMaxMemory, "maxmemory", RedisMaxMemoryDefault, "redis max memory")
+	fs.StringVar(&c.RedisMaxMemoryPolicy, "maxmemory-policy", RedisMaxMemoryPolicyDefault, "redis max memory evition policy")
 
 	fs.StringVar(&c.HTTPServerAddr, "http-addr", HTTPServerAddrDefault, "the http server listen address")
 
