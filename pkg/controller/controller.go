@@ -288,6 +288,13 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 		return forceRequeue, err
 	}
 
+	for _, p := range redisClusterPods {
+		if p.Status.Reason == "NodeLost" {
+			err := c.podControl.DeletePodNow(rediscluster, p.Name)
+			glog.Errorf("Lost node with pod %s. Deleting... %v", p.Name, err)
+		}
+	}
+
 	// RedisAdmin is used access the Redis process in the different pods.
 	admin, err := NewRedisAdmin(redisClusterPods, &c.config.redis)
 	if err != nil {
