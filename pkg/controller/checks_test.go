@@ -1134,3 +1134,14 @@ func Test_comparePodSpec(t *testing.T) {
 		})
 	}
 }
+
+func Test_filterLostNodes(t *testing.T) {
+	var pods []*kapi.Pod
+	pods = append(pods, &kapi.Pod{ Status: kapi.PodStatus{Reason:"Running"}})
+	pods = append(pods, &kapi.Pod{ Status: kapi.PodStatus{Reason:"Finished"}})
+	pods = append(pods, &kapi.Pod{ Status: kapi.PodStatus{Reason:"NodeLost"}})
+	ok , ko := filterLostNodes(pods)
+	if !(len(ok) == 2 || len(ko) == 1) {
+		t.Errorf("filterLostNodes() wrong result ok: %v, ko: %v", ok , ko)
+	}
+}

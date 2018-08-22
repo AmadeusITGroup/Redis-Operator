@@ -64,6 +64,18 @@ func compareStatus(old, new *rapi.RedisClusterClusterStatus) bool {
 	return false
 }
 
+//Divide pods for lost and other
+func filterLostNodes(pods []*kapi.Pod) (ok []*kapi.Pod, ko []*kapi.Pod) {
+	for _, pod := range pods {
+		if pod.Status.Reason == "NodeLost" {
+			ko = append(ko, pod)
+		} else {
+			ok = append(ok, pod)
+		}
+	}
+	return ok, ko
+}
+
 func compareNodes(nodeA, nodeB *rapi.RedisClusterNode) bool {
 	if compareStringValue("Node.IP", nodeA.IP, nodeB.IP) {
 		return true
