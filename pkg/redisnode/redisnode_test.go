@@ -34,8 +34,8 @@ func TestTestAndWaitConnection(t *testing.T) {
 func TestIsClusterInitialization(t *testing.T) {
 	currentIP := "1.2.3.4"
 	conf := Config{
-		RedisServerPort: "1234",
-		Cluster:         config.Cluster{Namespace: "default", NodeService: "redis-service"},
+		Redis:   config.Redis{ServerPort: "1234"},
+		Cluster: config.Cluster{Namespace: "default", NodeService: "redis-service"},
 	}
 
 	testCases := []struct {
@@ -86,9 +86,8 @@ func TestRedisInitializationAttach(t *testing.T) {
 	defer os.Remove(tmpfile.Name()) // clean up
 
 	c := &Config{
-		RedisServerPort: "1234",
-		Redis:           config.Redis{ConfigFile: tmpfile.Name()},
-		Cluster:         config.Cluster{Namespace: "default", NodeService: "redis-service"},
+		Redis:   config.Redis{ServerPort: "1234", ConfigFileName: tmpfile.Name()},
+		Cluster: config.Cluster{Namespace: "default", NodeService: "redis-service"},
 	}
 
 	// other ips registered, will attach to them

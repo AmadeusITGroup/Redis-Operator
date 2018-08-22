@@ -2,6 +2,8 @@ apiVersion: "redisoperator.k8s.io/v1alpha1"
 kind: RedisCluster
 metadata:
   name: {{ template "cluster-name" . }}
+  labels:
+    app: {{ template "name" . }}
 spec:
   numberOfMaster: {{ .Values.numberOfMaster }}
   replicationFactor: {{ .Values.replicationFactor }}
@@ -15,10 +17,18 @@ spec:
       volumes:
         - name: data
           emptyDir: {}
+        - name: conf
+          emptyDir: {}
+{{- if .Values.redis.configuration.file }}
+        - name: extra-conf
+          configMap:
+            name: {{ template "cluster-name" . }}
+{{- end }}
       containers:
         - name: redis-node
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args: ["--v={{ .Values.log.level }}", 
+            "--c=/redis-conf/redis.conf",
             "--logtostderr=true", 
             "--alsologtostderr=true",
             "--rs={{ template "service-name" . }}", 
@@ -31,6 +41,9 @@ spec:
 {{- if .Values.maxMemoryPolicy }}
              "--max-memory-policy={{ .Values.maxMemoryPolicy }}",
 {{- end }}
+{{- if .Values.redis.configuration.file }}
+            "--config-file=/redis-extra-conf/redis.conf",
+{{- end }}
             "--cluster-node-timeout=2000"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -41,6 +54,12 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /redis-data
+            - name: conf
+              mountPath: /redis-conf
+{{- if .Values.redis.configuration.file }}
+            - name: extra-conf
+              mountPath: /redis-extra-conf
+{{- end }}
           env:
             - name: POD_NAMESPACE
               valueFrom:

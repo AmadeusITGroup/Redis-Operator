@@ -1,0 +1,12 @@
+{{- if .Values.redis.configuration.file }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "cluster-name" . }}
+  labels:
+    app: {{ template "name" . }}
+data:
+  redis.conf: |-
+{{ (.Files.Get .Values.redis.configuration.file) | indent 4 }}
+    
+{{- end }}
