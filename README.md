@@ -81,6 +81,13 @@ helm install --name mycluster charts/redis-cluster --set numberOfMaster=3 --set 
 ...
 ```
 
+> **! Warning !**, if you want to use the docker images corresponding  to the level of code present in the "master" branch. you need to set the image tag when you instanciate the Redis-Cluster chart and the Redis-Operator chart. The "latest" tag is corresponding to the last validated release.
+
+```console
+helm install --name mycluster charts/redis-cluster --set image.tag=master --set numberOfMaster=3 --set replicationFactor=1
+...
+```
+
 #### Install the kubctl redis-cluster plugin
 
 docs available [here](docs/kubectl-plugin.md).
