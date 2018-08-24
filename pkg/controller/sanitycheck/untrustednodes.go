@@ -76,6 +76,9 @@ func listUntrustedNodes(infos *redis.ClusterInfos) map[string]*redis.Node {
 }
 
 func checkIfPodNameExistAndIsReused(node *redis.Node, podlist []*kapi.Pod) (exist bool, reused bool) {
+	if node.Pod == nil {
+		return exist, reused
+	}
 	for _, currentPod := range podlist {
 		if currentPod.Name == node.Pod.Name {
 			exist = true
