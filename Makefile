@@ -44,8 +44,11 @@ container: $(addprefix container-,$(CMDBINS))
 test:
 	./go.test.sh
 
-push: container
-	@cd docker/${ARTIFACT_OPERATOR} && docker push $(PREFIX)$(ARTIFACT_OPERATOR):$(TAG)
+
+push-%: container-%
+	docker push $(PREFIX)$*:$(TAG)
+
+push: $(addprefix push-,$(CMDBINS))
 
 clean:
 	rm -f ${ARTIFACT_OPERATOR}

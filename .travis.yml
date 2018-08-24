@@ -60,9 +60,7 @@ jobs:
     - cat /tmp/tmp.operator.logs
     deploy:
     - provider: script
-      script:
-       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-       - make TAG=master push
+      script: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin && make TAG=master push
       on:
         branch: master
   - stage: release
