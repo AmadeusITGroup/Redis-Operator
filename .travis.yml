@@ -58,18 +58,19 @@ jobs:
     - cd ./test/e2e && go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 200
     - helm delete end2end-test
     - cat /tmp/tmp.operator.logs
+    deploy:
+    - provider: script
+      script:
+       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+       - make TAG=master push
+      on:
+        branch: master
   - stage: release
     name: release
     script:
       - docker login -u "$DOCKER_USERNAME" p "$DOCKER_PASSWORD"
       - curl -sL https://git.io/goreleaser | bash
     deploy:
-    - provider: script
-      script:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - make TAG=master push
-      on:
-        branch: master
     - provider: releases
       api_key:
         secure: $GITHUB_TOKEN
