@@ -1,6 +1,7 @@
 package redisnode
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,12 +22,13 @@ func TestUpdateNodeConfigFile(t *testing.T) {
 
 	a := admin.NewFakeAdmin([]string{})
 	c := Config{
-		RedisServerPort: "1234",
-		RedisMaxMemory:  1048576,
-		RedisMaxMemoryPolicy:  "allkeys-lru",
 		Redis: config.Redis{
+			ServerPort:         "1234",
+			MaxMemory:          1048576,
+			MaxMemoryPolicy:    "allkeys-lru",
 			ClusterNodeTimeout: 321,
-			ConfigFile:         configfile.Name(),
+			ConfigFileName:     configfile.Name(),
+			ConfigFiles:        []string{"/cfg/foo.cfg", "bar.cfg"},
 		},
 	}
 
@@ -39,16 +41,27 @@ func TestUpdateNodeConfigFile(t *testing.T) {
 
 	// checking file content
 	content, _ := ioutil.ReadFile(configfile.Name())
-	expected := "port 1234\nmaxmemory 1048576\nmaxmemory-policy allkeys-lru\nbind " + node.IP + " 127.0.0.1\ncluster-node-timeout 321\n"
+	var expected = `include /redis-conf/redis.conf
+port 1234
+cluster-enabled yes
+maxmemory 1048576
+maxmemory-policy allkeys-lru
+bind %s 127.0.0.1
+cluster-node-timeout 321
+include /cfg/foo.cfg
+include bar.cfg
+`
+	expected = fmt.Sprintf(expected, node.IP)
 	if expected != string(content) {
 		t.Errorf("Wrong file content, expected '%s', got '%s'", expected, string(content))
+		t.Errorf("Wrong file lens, expected '%d', got '%d'", len(expected), len(string(content)))
 	}
 }
 
 func TestAdminCommands(t *testing.T) {
 	a := admin.NewFakeAdmin([]string{})
 	c := Config{
-		RedisServerPort: "1234",
+		Redis: config.Redis{ServerPort: "1234"},
 	}
 
 	node := NewNode(&c, a)

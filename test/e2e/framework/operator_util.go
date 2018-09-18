@@ -46,6 +46,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 					ServiceAccountName: "redis-node",
 					Volumes: []v1.Volume{
 						{Name: "data"},
+						{Name: "conf"},
 					},
 					Containers: []v1.Container{
 						{
@@ -68,6 +69,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{Name: "data", MountPath: "/redis-data"},
+								{Name: "conf", MountPath: "/redis-conf"},
 							},
 							Env: []v1.EnvVar{
 								{Name: "POD_NAMESPACE", ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},

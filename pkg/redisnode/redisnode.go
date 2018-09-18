@@ -198,7 +198,7 @@ func (r *RedisNode) isClusterInitialization(currentIP string) ([]string, bool) {
 		glog.Info("Redis Node list empty")
 	}
 
-	if len(nodesAddr) == 1 && nodesAddr[0] == net.JoinHostPort(currentIP, r.config.RedisServerPort) {
+	if len(nodesAddr) == 1 && nodesAddr[0] == net.JoinHostPort(currentIP, r.config.Redis.ServerPort) {
 		// Init Master cluster
 		initCluster = true
 	}
@@ -231,7 +231,7 @@ func (r *RedisNode) configureHealth() error {
 		glog.Errorf("unable to get my IP, err:%v", err)
 		return err
 	}
-	addr := net.JoinHostPort(ip, r.config.RedisServerPort)
+	addr := net.JoinHostPort(ip, r.config.Redis.ServerPort)
 
 	health := healthcheck.NewHandler()
 	health.AddReadinessCheck("Check redis-node readiness", func() error {
@@ -303,7 +303,7 @@ func (r *RedisNode) runHTTPServer(stop <-chan struct{}) error {
 
 // WrapRedis start a redis server in a sub process
 func WrapRedis(c *Config, ch chan error) {
-	cmd := exec.Command(c.RedisServerBin, c.Redis.ConfigFile)
+	cmd := exec.Command(c.Redis.ServerBin, c.Redis.ConfigFileName)
 	cmd.Stdout = utils.NewLogWriter(glog.Info)
 	cmd.Stderr = utils.NewLogWriter(glog.Error)
 

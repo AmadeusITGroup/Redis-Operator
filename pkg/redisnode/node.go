@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/amadeusitgroup/redis-operator/pkg/config"
 	"github.com/amadeusitgroup/redis-operator/pkg/redis"
 	"github.com/amadeusitgroup/redis-operator/pkg/utils"
 	"github.com/golang/glog"
@@ -35,7 +36,7 @@ func NewNode(c *Config, admin redis.AdminInterface) *Node {
 		config:     c,
 		RedisAdmin: admin,
 		IP:         ip,
-		Addr:       net.JoinHostPort(ip, c.RedisServerPort),
+		Addr:       net.JoinHostPort(ip, c.Redis.ServerPort),
 	}
 
 	return n
@@ -52,33 +53,48 @@ func (n *Node) Clear() {
 
 // UpdateNodeConfigFile update the redis config file with node information: ip, port
 func (n *Node) UpdateNodeConfigFile() error {
-	err := n.addSettingInConfigFile("port " + n.config.RedisServerPort)
-	if err != nil {
-		return err
-	}
-	if n.config.RedisMaxMemory > 0 {
-		err = n.addSettingInConfigFile(fmt.Sprintf("maxmemory %d", n.config.RedisMaxMemory))
-		if err != nil {
+	if n.config.Redis.ConfigFileName != config.RedisConfigFileDefault {
+		if err := n.addSettingInConfigFile("include " + config.RedisConfigFileDefault); err != nil {
 			return err
 		}
 	}
-	if n.config.RedisMaxMemoryPolicy != RedisMaxMemoryPolicyDefault {
-		err = n.addSettingInConfigFile(fmt.Sprintf("maxmemory-policy %s", n.config.RedisMaxMemoryPolicy))
-		if err != nil {
+
+	if err := n.addSettingInConfigFile("port " + n.config.Redis.ServerPort); err != nil {
+		return err
+	}
+
+	if err := n.addSettingInConfigFile("cluster-enabled yes"); err != nil {
+		return err
+	}
+
+	if n.config.Redis.MaxMemory > 0 {
+		if err := n.addSettingInConfigFile(fmt.Sprintf("maxmemory %d", n.config.Redis.MaxMemory)); err != nil {
 			return err
 		}
 	}
-	err = n.addSettingInConfigFile("bind " + n.IP + " 127.0.0.1")
-	if err != nil {
+	if n.config.Redis.MaxMemoryPolicy != config.RedisMaxMemoryPolicyDefault {
+		if err := n.addSettingInConfigFile(fmt.Sprintf("maxmemory-policy %s", n.config.Redis.MaxMemoryPolicy)); err != nil {
+			return err
+		}
+	}
+
+	if err := n.addSettingInConfigFile("bind " + n.IP + " 127.0.0.1"); err != nil {
 		return err
 	}
-	err = n.addSettingInConfigFile("cluster-node-timeout " + strconv.Itoa(n.config.Redis.ClusterNodeTimeout))
-	if err != nil {
+
+	if err := n.addSettingInConfigFile("cluster-node-timeout " + strconv.Itoa(n.config.Redis.ClusterNodeTimeout)); err != nil {
 		return err
 	}
 	if n.config.Redis.GetRenameCommandsFile() != "" {
-		err = n.addSettingInConfigFile("include " + n.config.Redis.GetRenameCommandsFile())
-		if err != nil {
+
+		if err := n.addSettingInConfigFile("include " + n.config.Redis.GetRenameCommandsFile()); err != nil {
+			return err
+		}
+	}
+
+	// Add at the end any configuration file provided as redis-node's arguments.
+	for _, file := range n.config.Redis.ConfigFiles {
+		if err := n.addSettingInConfigFile("include " + file); err != nil {
 			return err
 		}
 	}
@@ -88,15 +104,18 @@ func (n *Node) UpdateNodeConfigFile() error {
 
 // addSettingInConfigFile add a line in the redis configuration file
 func (n *Node) addSettingInConfigFile(line string) error {
-	f, err := os.OpenFile(n.config.Redis.ConfigFile, os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(n.config.Redis.ConfigFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to set '%s' in config file, openfile error %s err:%v", line, n.config.Redis.ConfigFileName, err)
 	}
 
 	defer f.Close()
 
 	_, err = f.WriteString(line + "\n")
-	return err
+	if err != nil {
+		return fmt.Errorf("unable to set '%s' in config file, err:%v", line, err)
+	}
+	return nil
 }
 
 // InitRedisCluster used to init a redis cluster with the current node

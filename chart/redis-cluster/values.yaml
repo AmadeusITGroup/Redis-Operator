@@ -27,3 +27,12 @@ resources: {}
   #  cpu: 1
   #  memory: 1024Mi
 maxMemoryPolicy: noeviction
+# list of additional redis configuration file that need to be included in the generated redis-server
+# configuration file. File can be accessible to the process by rebuilding the "redis-node" docker image
+# with the specific file, or by add a ConfigMap volume to the Pod.
+redis:
+  configuration:
+    # you can provide the path of a redis configuration file that will be added in a configMap and included
+    # in the redis-server configuration in each redis-cluster node.
+    # the file must be local of the helm chart (in the chart folder).
+    file: ""
