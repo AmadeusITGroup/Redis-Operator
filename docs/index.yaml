@@ -1,3 +1,21 @@
 apiVersion: v1
 entries:
-
+  redis-cluster:
+  - apiVersion: v1
+    created: 2018-10-01T11:08:50.899233+02:00
+    description: Redis-Cluster Helm chart for Kubernetes
+    digest: 97832f1a812ac9f11fb27a964aff44a00bcaf430ed83224d4e3584361346f5db
+    name: redis-cluster
+    urls:
+    - https://amadeusitgroup.github.io/redis-operator/helm-redis-cluster-0.0.1.tgz
+    version: 0.0.1
+  redis-operator:
+  - apiVersion: v1
+    created: 2018-10-01T11:08:50.899784+02:00
+    description: Redis-Operator Helm chart for Kubernetes
+    digest: 7a10c61fd794b892119e40e7ef5410372e715f9e726b09b6bd6d8704fb08e56c
+    name: redis-operator
+    urls:
+    - https://amadeusitgroup.github.io/redis-operator/helm-redis-operator-0.0.1.tgz
+    version: 0.0.1
+generated: 2018-10-01T11:08:50.897832+02:00
