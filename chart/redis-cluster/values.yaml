@@ -11,7 +11,7 @@ annotations:
   # kubernetes.io/tls-acme: "true"
 image:
   repository: redisoperator/redisnode
-  tag: latest
+  tag: master
   pullPolicy: IfNotPresent
 log:
   level: 6
