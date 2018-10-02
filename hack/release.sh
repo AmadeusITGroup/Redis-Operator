@@ -15,8 +15,8 @@ zsh $GIT_ROOT/hack/helm-release.sh $1 redis-operator
 zsh $GIT_ROOT/hack/helm-release.sh $1 redis-cluster
 
 # Update CHANGELOG.md file
-ssed -i.bak "5i## Release $1\n" CHANGELOG.md
+sed -i.bak "5i## Release $1\n" CHANGELOG.md
 
 git commit -am "release $1"
 git tag -f $1
-#git push -f --tags $GIT_REMOTE master
+
