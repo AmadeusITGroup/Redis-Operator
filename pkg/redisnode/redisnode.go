@@ -289,7 +289,7 @@ func livenessCheck(addr string) error {
 func (r *RedisNode) runHTTPServer(stop <-chan struct{}) error {
 
 	go func() {
-		glog.Info("Listening on http://%s\n", r.httpServer.Addr)
+		glog.Infof("Listening on http://%s\n", r.httpServer.Addr)
 
 		if err := r.httpServer.ListenAndServe(); err != nil {
 			glog.Error("Http server error: ", err)

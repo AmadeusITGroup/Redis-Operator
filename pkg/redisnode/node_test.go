@@ -47,6 +47,8 @@ cluster-enabled yes
 maxmemory 1048576
 maxmemory-policy allkeys-lru
 bind %s 127.0.0.1
+cluster-config-file /redis-data/node.conf
+dir /redis-data
 cluster-node-timeout 321
 include /cfg/foo.cfg
 include bar.cfg

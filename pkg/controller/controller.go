@@ -326,7 +326,7 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 	if updated {
 		// If the cluster status changes requeue the key. Because we want to apply Redis Cluster operation only on stable cluster,
 		// already stored in the API server.
-		glog.V(3).Info("cluster updated %s-%s, err: %v", rediscluster.Namespace, rediscluster.Name)
+		glog.V(3).Infof("cluster updated %s-%s", rediscluster.Namespace, rediscluster.Name)
 		forceRequeue = true
 		return forceRequeue, nil
 	}
@@ -556,7 +556,9 @@ func (c *Controller) onAddPod(obj interface{}) {
 		glog.Errorf("adding Pod, expected Pod object. Got: %+v", obj)
 		return
 	}
-
+	if _, ok := pod.GetObjectMeta().GetLabels()[rapi.ClusterNameLabelKey]; !ok {
+		return
+	}
 	redisCluster, err := c.getRedisClusterFromPod(pod)
 	if err != nil {
 		glog.Errorf("unable to retrieve the associated rediscluster for pod %s/%s:%v", pod.Namespace, pod.Name, err)
@@ -572,6 +574,9 @@ func (c *Controller) onAddPod(obj interface{}) {
 
 func (c *Controller) onDeletePod(obj interface{}) {
 	pod, ok := obj.(*apiv1.Pod)
+	if _, ok := pod.GetObjectMeta().GetLabels()[rapi.ClusterNameLabelKey]; !ok {
+		return
+	}
 	glog.V(6).Infof("onDeletePod old=%v", pod.Name)
 	if !ok {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
@@ -603,6 +608,9 @@ func (c *Controller) onUpdatePod(oldObj, newObj interface{}) {
 	oldPod := oldObj.(*apiv1.Pod)
 	newPod := newObj.(*apiv1.Pod)
 	if oldPod.ResourceVersion == newPod.ResourceVersion { // Since periodic resync will send update events for all known Pods.
+		return
+	}
+	if _, ok := newPod.GetObjectMeta().GetLabels()[rapi.ClusterNameLabelKey]; !ok {
 		return
 	}
 	glog.V(6).Infof("onUpdatePod old=%v, cur=%v ", oldPod.Name, newPod.Name)
