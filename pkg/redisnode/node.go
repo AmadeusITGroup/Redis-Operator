@@ -82,6 +82,14 @@ func (n *Node) UpdateNodeConfigFile() error {
 		return err
 	}
 
+	if err := n.addSettingInConfigFile("cluster-config-file /redis-data/node.conf"); err != nil {
+		return err
+	}
+
+	if err := n.addSettingInConfigFile("dir /redis-data"); err != nil {
+		return err
+	}
+
 	if err := n.addSettingInConfigFile("cluster-node-timeout " + strconv.Itoa(n.config.Redis.ClusterNodeTimeout)); err != nil {
 		return err
 	}
@@ -158,13 +166,13 @@ func clearFolder(folder string) error {
 	glog.Infof("Clearing '%s' folder... ", folder)
 	d, err := os.Open(folder)
 	if err != nil {
-		glog.Info("Cannot access folder %s: %v", folder, err)
+		glog.Infof("Cannot access folder %s: %v", folder, err)
 		return err
 	}
 	defer d.Close()
 	names, err := d.Readdirnames(-1)
 	if err != nil {
-		glog.Info("Cannot read files in %s: %v", folder, err)
+		glog.Infof("Cannot read files in %s: %v", folder, err)
 		return err
 	}
 	for _, name := range names {

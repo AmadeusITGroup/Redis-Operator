@@ -139,12 +139,11 @@ func GenerateMD5Spec(spec *kapiv1.PodSpec) (string, error) {
 // BuildOwnerReference used to build the OwnerReference from a RedisCluster
 func BuildOwnerReference(cluster *rapi.RedisCluster) metav1.OwnerReference {
 	controllerRef := metav1.OwnerReference{
-		APIVersion:         rapi.SchemeGroupVersion.String(),
-		Kind:               rapi.ResourceKind,
-		Name:               cluster.Name,
-		UID:                cluster.UID,
-		BlockOwnerDeletion: boolPtr(true),
-		Controller:         boolPtr(true),
+		APIVersion: rapi.SchemeGroupVersion.String(),
+		Kind:       rapi.ResourceKind,
+		Name:       cluster.Name,
+		UID:        cluster.UID,
+		Controller: boolPtr(true),
 	}
 
 	return controllerRef

@@ -285,7 +285,7 @@ func (a *Admin) ForgetNode(id string) error {
 
 		if IsSlave(nodeinfos.Node) && nodeinfos.Node.MasterReferent == id {
 			a.DetachSlave(nodeinfos.Node)
-			glog.V(2).Infof("detach slave id: %s of master: %d", nodeinfos.Node.ID, id)
+			glog.V(2).Infof("detach slave id: %s of master: %s", nodeinfos.Node.ID, id)
 		}
 
 		resp := c.Cmd("CLUSTER", "FORGET", id)

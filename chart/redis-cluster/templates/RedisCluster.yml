@@ -1,7 +1,7 @@
 apiVersion: "redisoperator.k8s.io/v1alpha1"
 kind: RedisCluster
 metadata:
-  name: {{ template "cluster-name" . }}
+  name: {{ template "clustername" . }}
   labels:
     app: {{ template "name" . }}
 spec:
@@ -13,7 +13,7 @@ spec:
       labels:
         app: {{ template "name" . }}
     spec:
-      serviceAccountName: "{{ .Values.serviceAccount }}"
+      serviceAccountName: {{ template "serviceaccount" . }}
       volumes:
         - name: data
           emptyDir: {}
@@ -22,7 +22,7 @@ spec:
 {{- if .Values.redis.configuration.file }}
         - name: extra-conf
           configMap:
-            name: {{ template "cluster-name" . }}
+            name: {{ template "clustername" . }}
 {{- end }}
       containers:
         - name: redis-node

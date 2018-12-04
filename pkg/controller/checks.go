@@ -138,7 +138,7 @@ func compareInts(name string, old, new int32) bool {
 
 func compareStringValue(name string, old, new string) bool {
 	if old != new {
-		glog.V(6).Infof("compare %s: %d - %d", name, old, new)
+		glog.V(6).Infof("compare %s: %s - %s", name, old, new)
 		return true
 	}
 
