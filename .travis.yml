@@ -2,7 +2,7 @@ language: go
 dist: trusty
 sudo: required
 go:
-- 1.9.x
+- 1.11.x
 os: linux
 services:
 - docker
@@ -27,6 +27,7 @@ script:
 - ./hack/run-test-ci.sh
 stages:
 - name: build
+  if: type NOT IN (pull_request)
 - name: release
   if: tag IS present
 jobs:
