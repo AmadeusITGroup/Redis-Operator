@@ -39,6 +39,7 @@ type Redis struct {
 	HTTPServerAddr     string
 	ServerBin          string
 	ServerPort         string
+	ServerIP           string
 	MaxMemory          uint32
 	MaxMemoryPolicy    string
 	ConfigFiles        []string
@@ -55,6 +56,7 @@ func (r *Redis) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&r.MaxMemoryPolicy, "max-memory-policy", RedisMaxMemoryPolicyDefault, "redis max memory evition policy")
 	fs.StringVar(&r.ServerBin, "bin", RedisServerBinDefault, "redis server binary file name")
 	fs.StringVar(&r.ServerPort, "port", RedisServerPortDefault, "redis server listen port")
+	fs.StringVar(&r.ServerIP, "ip", "", "redis server listen ip")
 	fs.StringArrayVar(&r.ConfigFiles, "config-file", []string{}, "Location of redis configuration file that will be include in the ")
 
 }

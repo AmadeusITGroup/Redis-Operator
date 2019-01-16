@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/amadeusitgroup/redis-operator/pkg/config"
 	"github.com/amadeusitgroup/redis-operator/pkg/redis"
@@ -20,14 +21,14 @@ const (
 // Node struct that represent a RedisNodeWrapper
 type Node struct {
 	config     *Config
-	IP         string
+	IPs        []string
 	Addr       string
 	RedisAdmin redis.AdminInterface
 }
 
 // NewNode return a instance of a Node
 func NewNode(c *Config, admin redis.AdminInterface) *Node {
-	ip, err := utils.GetMyIP()
+	ips, err := utils.GetMyIPs()
 	if err != nil {
 		return nil
 	}
@@ -35,8 +36,8 @@ func NewNode(c *Config, admin redis.AdminInterface) *Node {
 	n := &Node{
 		config:     c,
 		RedisAdmin: admin,
-		IP:         ip,
-		Addr:       net.JoinHostPort(ip, c.Redis.ServerPort),
+		IPs:        ips,
+		Addr:       net.JoinHostPort(c.Redis.ServerIP, c.Redis.ServerPort),
 	}
 
 	return n
@@ -78,7 +79,7 @@ func (n *Node) UpdateNodeConfigFile() error {
 		}
 	}
 
-	if err := n.addSettingInConfigFile("bind " + n.IP + " 127.0.0.1"); err != nil {
+	if err := n.addSettingInConfigFile("bind " + strings.Join(n.IPs, " ") + " 127.0.0.1"); err != nil {
 		return err
 	}
 
