@@ -61,6 +61,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 								"--t=10s",
 								"--d=10s",
 								"--ns=$(POD_NAMESPACE)",
+								"--ip=$(POD_IP)",
 								"--cluster-node-timeout=2000",
 							},
 							Ports: []v1.ContainerPort{
@@ -73,6 +74,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 							},
 							Env: []v1.EnvVar{
 								{Name: "POD_NAMESPACE", ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
+								{Name: "POD_IP", ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "status.podIP"}}},
 							},
 							LivenessProbe: &v1.Probe{
 								Handler: v1.Handler{

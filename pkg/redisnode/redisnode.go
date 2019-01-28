@@ -226,17 +226,10 @@ func (r *RedisNode) handleStop(me *Node) error {
 }
 
 func (r *RedisNode) configureHealth() error {
-	ip, err := utils.GetMyIP()
-	if err != nil {
-		glog.Errorf("unable to get my IP, err:%v", err)
-		return err
-	}
-	addr := net.JoinHostPort(ip, r.config.Redis.ServerPort)
-
+	addr := net.JoinHostPort("127.0.0.1", r.config.Redis.ServerPort)
 	health := healthcheck.NewHandler()
 	health.AddReadinessCheck("Check redis-node readiness", func() error {
-		err = readinessCheck(addr)
-		if err != nil {
+		if err := readinessCheck(addr); err != nil {
 			glog.Errorf("readiness check failed, err:%v", err)
 			return err
 		}
@@ -244,8 +237,7 @@ func (r *RedisNode) configureHealth() error {
 	})
 
 	health.AddLivenessCheck("Check redis-node liveness", func() error {
-		err = livenessCheck(addr)
-		if err != nil {
+		if err := livenessCheck(addr); err != nil {
 			glog.Errorf("liveness check failed, err:%v", err)
 			return err
 		}

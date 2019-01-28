@@ -26,6 +26,7 @@ spec:
             "--d=10s",
             "--cluster-node-timeout=2000",
             "--ns=$(POD_NAMESPACE)",
+            "--ip=$(POD_IP)",
             "--rs=cluster-test"]
           imagePullPolicy: IfNotPresent
           ports:
@@ -41,6 +42,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
           livenessProbe:
             httpGet:
               path: /live

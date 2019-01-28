@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/amadeusitgroup/redis-operator/pkg/config"
@@ -53,7 +54,7 @@ cluster-node-timeout 321
 include /cfg/foo.cfg
 include bar.cfg
 `
-	expected = fmt.Sprintf(expected, node.IP)
+	expected = fmt.Sprintf(expected, strings.Join(node.IPs, " "))
 	if expected != string(content) {
 		t.Errorf("Wrong file content, expected '%s', got '%s'", expected, string(content))
 		t.Errorf("Wrong file lens, expected '%d', got '%d'", len(expected), len(string(content)))
