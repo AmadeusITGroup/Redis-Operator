@@ -61,7 +61,7 @@ func NewRedisCluster(name, namespace, tag string, nbMaster, replication int32) *
 								"--t=10s",
 								"--d=10s",
 								"--ns=$(POD_NAMESPACE)",
-								"--ns=$(POD_IP)",
+								"--ip=$(POD_IP)",
 								"--cluster-node-timeout=2000",
 							},
 							Ports: []v1.ContainerPort{
