@@ -6,11 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/amadeusitgroup/redis-operator/pkg/config"
 	"github.com/amadeusitgroup/redis-operator/pkg/redis"
-	"github.com/amadeusitgroup/redis-operator/pkg/utils"
 	"github.com/golang/glog"
 )
 
@@ -21,22 +19,15 @@ const (
 // Node struct that represent a RedisNodeWrapper
 type Node struct {
 	config     *Config
-	IPs        []string
 	Addr       string
 	RedisAdmin redis.AdminInterface
 }
 
 // NewNode return a instance of a Node
 func NewNode(c *Config, admin redis.AdminInterface) *Node {
-	ips, err := utils.GetMyIPs()
-	if err != nil {
-		return nil
-	}
-
 	n := &Node{
 		config:     c,
 		RedisAdmin: admin,
-		IPs:        ips,
 		Addr:       net.JoinHostPort(c.Redis.ServerIP, c.Redis.ServerPort),
 	}
 
@@ -79,7 +70,7 @@ func (n *Node) UpdateNodeConfigFile() error {
 		}
 	}
 
-	if err := n.addSettingInConfigFile("bind " + strings.Join(n.IPs, " ") + " 127.0.0.1"); err != nil {
+	if err := n.addSettingInConfigFile("bind 0.0.0.0"); err != nil {
 		return err
 	}
 

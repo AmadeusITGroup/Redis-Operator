@@ -1,11 +1,9 @@
 package redisnode
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/amadeusitgroup/redis-operator/pkg/config"
@@ -47,17 +45,15 @@ port 1234
 cluster-enabled yes
 maxmemory 1048576
 maxmemory-policy allkeys-lru
-bind %s 127.0.0.1
+bind 0.0.0.0
 cluster-config-file /redis-data/node.conf
 dir /redis-data
 cluster-node-timeout 321
 include /cfg/foo.cfg
 include bar.cfg
 `
-	expected = fmt.Sprintf(expected, strings.Join(node.IPs, " "))
 	if expected != string(content) {
 		t.Errorf("Wrong file content, expected '%s', got '%s'", expected, string(content))
-		t.Errorf("Wrong file lens, expected '%d', got '%d'", len(expected), len(string(content)))
 	}
 }
 
