@@ -277,12 +277,7 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 			return forceRequeue, err
 		}
 	}
-
-	podselector, err := pod.CreateRedisClusterLabelSelector(rediscluster)
-	if err != nil {
-		return forceRequeue, err
-	}
-	redisClusterPods, err := c.podLister.List(podselector)
+	redisClusterPods, err := c.podControl.GetRedisClusterPods(rediscluster)
 	if err != nil {
 		glog.Errorf("RedisCluster-Operator.sync unable to retrieves pod associated to the RedisCluster: %s/%s", rediscluster.Namespace, rediscluster.Name)
 		return forceRequeue, err

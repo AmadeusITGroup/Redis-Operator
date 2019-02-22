@@ -55,7 +55,7 @@ func (p *RedisClusterControl) GetRedisClusterPods(redisCluster *rapi.RedisCluste
 	if err != nil {
 		return nil, err
 	}
-	return p.PodLister.List(selector)
+	return p.PodLister.Pods(redisCluster.Namespace).List(selector)
 }
 
 // CreatePod used to create a Pod from the RedisCluster pod template
