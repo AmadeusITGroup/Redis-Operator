@@ -29,7 +29,7 @@ The `redis-operator` is watching a new kind of Custom-Resource `RedisCluster` th
 
 Then reconciliation is constantly done between the state of the cluster and the configuration stored in the `RedisCluster` CR.
 
-### Develpment
+### Development
 
 If you want to take part of the development, you can follow the document: [CONTRIBUTING.md](CONTRIBUTING.md).
 
