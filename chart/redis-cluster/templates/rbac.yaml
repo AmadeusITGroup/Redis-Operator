@@ -1,4 +1,4 @@
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1beta1" }}
+{{- if .Values.rbac }}
 apiVersion: v1
 kind: List
 items:
@@ -26,4 +26,4 @@ items:
   - kind: ServiceAccount
     name: {{ template "serviceaccount" . }}
     namespace: {{ .Release.Namespace }}
-{{ end }}
+{{- end }}
