@@ -72,7 +72,9 @@ func (s *PodDisruptionBudgetsControl) CreateRedisClusterPodDisruptionBudget(redi
 	if err != nil {
 		return nil, err
 	}
-	maxUnavailable := intstr.FromInt(1)
+	// https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors
+        // we are not allowed to use maxUnavailable so use total cluster size -1 as minAvailable
+	minAvailable := intstr.FromInt(int(*redisCluster.Spec.NumberOfMaster)*int(*redisCluster.Spec.ReplicationFactor+1) - 1)
 	labelSelector := metav1.LabelSelector{
 		MatchLabels: desiredlabels,
 	}
@@ -84,8 +86,8 @@ func (s *PodDisruptionBudgetsControl) CreateRedisClusterPodDisruptionBudget(redi
 			OwnerReferences: []metav1.OwnerReference{pod.BuildOwnerReference(redisCluster)},
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
-			MaxUnavailable: &maxUnavailable,
-			Selector:       &labelSelector,
+			MinAvailable: &minAvailable,
+			Selector:     &labelSelector,
 		},
 	}
 	return s.KubeClient.PolicyV1beta1().PodDisruptionBudgets(redisCluster.Namespace).Create(newPodDisruptionBudget)
