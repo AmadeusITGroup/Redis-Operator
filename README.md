@@ -56,7 +56,7 @@ You can found in the `charts` folder two helm charts:
 #### Instanciate the `redis-operator`:
 
 ```console
-helm install --name op charts/redis-operator
+helm install --name op chart/redis-operator
 NAME:   op
 LAST DEPLOYED: Tue Jan  9 23:41:13 2018
 NAMESPACE: default
@@ -77,7 +77,7 @@ Thanks to the helm chart `chart/redis-cluster` you can create a `RedisCluster` C
 You can configure the Topology of the cluster by providing your own `values.yml` file to helm, or settings the value with the `--set` parameters when you execute `helm install`
 
 ```console
-helm install --name mycluster charts/redis-cluster --set numberOfMaster=3 --set replicationFactor=1
+helm install --name mycluster chart/redis-cluster --set numberOfMaster=3 --set replicationFactor=1
 ...
 ```
 
