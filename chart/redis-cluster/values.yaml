@@ -35,4 +35,5 @@ redis:
     # you can provide the path of a redis configuration file that will be added in a configMap and included
     # in the redis-server configuration in each redis-cluster node.
     # the file must be local of the helm chart (in the chart folder).
-    file: ""
+    file: "redis.conf"
+rbac: true

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "cluster-name" . }}
+  name: {{ template "clustername" . }}
   labels:
     app: {{ template "name" . }}
 data:
