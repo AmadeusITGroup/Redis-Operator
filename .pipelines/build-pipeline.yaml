@@ -34,6 +34,7 @@ steps:
   inputs: 
     command: buildAndPush
     dockerfile: '$(modulePath)/docker/operator/Dockerfile'
+    buildContext: '$(modulePath)/bin'
     repository: $(OperatorDockerRepository)
     tags: |
       $(tag)
