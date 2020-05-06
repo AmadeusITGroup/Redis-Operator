@@ -24,10 +24,10 @@ install-plugin:
 	./tools/install-plugin.sh
 
 build-%:
-	CGO_ENABLED=0 go build -i -installsuffix cgo ${LDFLAGS} -o bin/$* ./cmd/$*
+	go build ${LDFLAGS} -o bin/$* ./cmd/$*
 
 buildlinux-%: ${SOURCES}
-	CGO_ENABLED=0 GOOS=linux go build -i -installsuffix cgo ${LDFLAGS} -o docker/$*/$* ./cmd/$*/main.go
+	go build ${LDFLAGS} -o docker/$*/$* ./cmd/$*/main.go
 
 container-%: buildlinux-%
 	@cd docker/$* && docker build -t $(PREFIX)$*:$(TAG) .

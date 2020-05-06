@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -8,11 +9,11 @@ import (
 
 	gomega "github.com/onsi/gomega"
 
-	"github.com/amadeusitgroup/redis-operator/pkg/api/redis"
+	redisk8soperatorio "github.com/amadeusitgroup/redis-operator/pkg/api/redis"
 	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
 	"github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -130,7 +131,7 @@ func BuildAndSetClients() (versioned.Interface, clientset.Interface) {
 // HOCreateRedisCluster is an higher order func that returns the func to create a RedisCluster
 func HOCreateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Create(rediscluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Create(context.TODO(), rediscluster, metav1.CreateOptions{}); err != nil {
 			glog.Warningf("cannot create RedisCluster %s/%s: %v", namespace, rediscluster.Name, err)
 			return err
 		}
@@ -142,13 +143,13 @@ func HOCreateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCl
 // HOUpdateRedisCluster is an higher order func that returns the func to update a RedisCluster
 func HOUpdateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(context.TODO(), rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Logf("Cannot get rediscluster:%v", err)
 			return err
 		}
 		cluster.Spec = rediscluster.Spec
-		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Update(cluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(namespace).Update(context.TODO(), cluster, metav1.UpdateOptions{}); err != nil {
 			glog.Warningf("cannot update RedisCluster %s/%s: %v", namespace, rediscluster.Name, err)
 			return err
 		}
@@ -160,7 +161,7 @@ func HOUpdateRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCl
 // HOIsRedisClusterStarted is an higher order func that returns the func that checks whether RedisCluster is started and configured properly
 func HOIsRedisClusterStarted(client versioned.Interface, rediscluster *rapi.RedisCluster, namespace string) func() error {
 	return func() error {
-		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(context.TODO(), rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Logf("Cannot get rediscluster:%v", err)
 			return err
@@ -193,7 +194,7 @@ func HOIsRedisClusterStarted(client versioned.Interface, rediscluster *rapi.Redi
 // HOUpdateConfigRedisCluster is an higher order func that returns the func to update the RedisCluster configuration
 func HOUpdateConfigRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster, nbmaster, replicas *int32) func() error {
 	return func() error {
-		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		cluster, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Get(context.TODO(), rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			glog.Warningf("cannot get RedisCluster %s/%s: %v", rediscluster.Namespace, rediscluster.Name, err)
 			return err
@@ -206,7 +207,7 @@ func HOUpdateConfigRedisCluster(client versioned.Interface, rediscluster *rapi.R
 			rediscluster.Spec.ReplicationFactor = replicas
 			cluster.Spec.ReplicationFactor = replicas
 		}
-		if _, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(cluster); err != nil {
+		if _, err := client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(context.TODO(), cluster, metav1.UpdateOptions{}); err != nil {
 			Logf("cannot update RedisCluster %s/%s: %v", rediscluster.Namespace, rediscluster.Name, err)
 			return err
 		}
@@ -221,7 +222,7 @@ func HOIsPodSpecUpdated(client clientset.Interface, rediscluster *rapi.RedisClus
 	return func() error {
 		labelSet := labels.Set{}
 		labelSet[rapi.ClusterNameLabelKey] = rediscluster.Name
-		podList, err := client.Core().Pods(rediscluster.Namespace).List(metav1.ListOptions{LabelSelector: labelSet.AsSelector().String()})
+		podList, err := client.CoreV1().Pods(rediscluster.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labelSet.AsSelector().String()})
 		if err != nil {
 			Logf("cannot get RedisCluster %s/%s: %v", rediscluster.Namespace, rediscluster.Name, err)
 			return err
@@ -254,20 +255,20 @@ func HOIsPodSpecUpdated(client clientset.Interface, rediscluster *rapi.RedisClus
 // HOCreateRedisNodeServiceAccount  is an higher order func that returns the func to create the serviceaccount assiated to the redis-node pod.
 func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *rapi.RedisCluster) func() error {
 	return func() error {
-		_, err := client.Core().ServiceAccounts(rediscluster.Namespace).Get("redis-node", metav1.GetOptions{})
+		_, err := client.CoreV1().ServiceAccounts(rediscluster.Namespace).Get(context.TODO(), "redis-node", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			newSa := v1.ServiceAccount{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "redis-node",
 				},
 			}
-			_, err = client.Core().ServiceAccounts(rediscluster.Namespace).Create(&newSa)
+			_, err = client.CoreV1().ServiceAccounts(rediscluster.Namespace).Create(context.TODO(), &newSa, metav1.CreateOptions{})
 			if err != nil {
 				return err
 			}
 		}
 
-		_, err = client.Rbac().ClusterRoles().Get("redis-node", metav1.GetOptions{})
+		_, err = client.RbacV1().ClusterRoles().Get(context.TODO(), "redis-node", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			cr := rbacv1.ClusterRole{
 				ObjectMeta: metav1.ObjectMeta{
@@ -281,12 +282,12 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 					},
 				},
 			}
-			_, err = client.Rbac().ClusterRoles().Create(&cr)
+			_, err = client.RbacV1().ClusterRoles().Create(context.TODO(), &cr, metav1.CreateOptions{})
 			if err != nil {
 				return err
 			}
 		}
-		_, err = client.Rbac().RoleBindings(rediscluster.Namespace).Get("redis-node", metav1.GetOptions{})
+		_, err = client.RbacV1().RoleBindings(rediscluster.Namespace).Get(context.TODO(), "redis-node", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
 			rb := rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -305,7 +306,7 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 					},
 				},
 			}
-			_, err = client.Rbac().RoleBindings(rediscluster.Namespace).Create(&rb)
+			_, err = client.RbacV1().RoleBindings(rediscluster.Namespace).Create(context.TODO(), &rb, metav1.CreateOptions{})
 			if err != nil {
 				return err
 			}
@@ -318,7 +319,7 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 // the RedisCluster have been created properly.
 func HOIsRedisClusterPodDisruptionBudgetCreated(client clientset.Interface, rediscluster *rapi.RedisCluster) func() error {
 	return func() error {
-		_, err := client.PolicyV1beta1().PodDisruptionBudgets(rediscluster.Namespace).Get(rediscluster.Name, metav1.GetOptions{})
+		_, err := client.PolicyV1beta1().PodDisruptionBudgets(rediscluster.Namespace).Get(context.TODO(), rediscluster.Name, metav1.GetOptions{})
 		if err != nil {
 			Logf("Cannot get PodDisruptionBudget associated to the rediscluster:%s/%s, err:%v", rediscluster.Namespace, rediscluster.Name, err)
 			return err

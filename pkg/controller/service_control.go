@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	kapiv1 "k8s.io/api/core/v1"
@@ -41,7 +42,7 @@ func NewServicesControl(client clientset.Interface, rec record.EventRecorder) *S
 // GetRedisClusterService used to retrieve the Kubernetes Service associated to the RedisCluster
 func (s *ServicesControl) GetRedisClusterService(redisCluster *rapi.RedisCluster) (*kapiv1.Service, error) {
 	serviceName := getServiceName(redisCluster)
-	svc, err := s.KubeClient.CoreV1().Services(redisCluster.Namespace).Get(serviceName, metav1.GetOptions{})
+	svc, err := s.KubeClient.CoreV1().Services(redisCluster.Namespace).Get(context.TODO(), serviceName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -77,13 +78,13 @@ func (s *ServicesControl) CreateRedisClusterService(redisCluster *rapi.RedisClus
 			Selector:  desiredlabels,
 		},
 	}
-	return s.KubeClient.CoreV1().Services(redisCluster.Namespace).Create(newService)
+	return s.KubeClient.CoreV1().Services(redisCluster.Namespace).Create(context.TODO(), newService, metav1.CreateOptions{})
 }
 
 // DeleteRedisClusterService used to delete the Kubernetes Service linked to the Redis Cluster
 func (s *ServicesControl) DeleteRedisClusterService(redisCluster *rapi.RedisCluster) error {
 	serviceName := getServiceName(redisCluster)
-	return s.KubeClient.CoreV1().Services(redisCluster.Namespace).Delete(serviceName, nil)
+	return s.KubeClient.CoreV1().Services(redisCluster.Namespace).Delete(context.TODO(), serviceName, metav1.DeleteOptions{})
 }
 
 func getServiceName(redisCluster *rapi.RedisCluster) string {

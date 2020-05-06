@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	"math"
@@ -476,7 +477,7 @@ func (c *Controller) enqueue(rediscluster *rapi.RedisCluster) {
 }
 
 func (c *Controller) updateRedisCluster(rediscluster *rapi.RedisCluster) (*rapi.RedisCluster, error) {
-	rc, err := c.redisClient.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(rediscluster)
+	rc, err := c.redisClient.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Update(context.TODO(), rediscluster, metav1.UpdateOptions{})
 	if err != nil {
 		glog.Errorf("updateRedisCluster cluster: [%v] error: %v", *rediscluster, err)
 		return rc, err

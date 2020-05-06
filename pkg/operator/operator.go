@@ -18,7 +18,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
-	rclient "github.com/amadeusitgroup/redis-operator/pkg/client"
+	"github.com/amadeusitgroup/redis-operator/pkg/client"
+	versionedclient "github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 	redisinformers "github.com/amadeusitgroup/redis-operator/pkg/client/informers/externalversions"
 	"github.com/amadeusitgroup/redis-operator/pkg/controller"
 	"github.com/amadeusitgroup/redis-operator/pkg/garbagecollector"
@@ -51,7 +52,7 @@ func NewRedisOperator(cfg *Config) *RedisOperator {
 		glog.Fatalf("Unable to init clientset from kubeconfig:%v", err)
 	}
 
-	_, err = rclient.DefineRedisClusterResource(extClient)
+	_, err = client.DefineRedisClusterResource(extClient)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		glog.Fatalf("Unable to define RedisCluster resource:%v", err)
 	}
@@ -61,7 +62,7 @@ func NewRedisOperator(cfg *Config) *RedisOperator {
 		glog.Fatalf("Unable to initialize kubeClient:%v", err)
 	}
 
-	redisClient, err := rclient.NewClient(kubeConfig)
+	redisClient, err := versionedclient.NewForConfig(kubeConfig)
 	if err != nil {
 		glog.Fatalf("Unable to init redis.clientset from kubeconfig:%v", err)
 	}
