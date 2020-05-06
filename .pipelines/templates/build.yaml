@@ -14,7 +14,7 @@ steps:
 
 - script: |
     go version
-    make buil
+    make build
   workingDirectory: '$(modulePath)'
   displayName: 'Get dependencies, then build'
 
