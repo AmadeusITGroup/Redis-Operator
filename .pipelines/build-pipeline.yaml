@@ -1,0 +1,60 @@
+# Go
+# Build your Go project.
+# Add steps that test, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/go
+
+trigger:
+- master
+- release/*
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+variables:
+  GOBIN:  '$(GOPATH)/bin' # Go binaries path
+  GOROOT: '/usr/local/go1.13' # Go installation path
+  GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
+  modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
+
+steps:
+- template: templates/build.yaml
+
+- task: Docker@2
+  displayName: Login to ACR
+  inputs: 
+    command: login
+    containerRegistry: $(DockerRegistryConnectionID)
+
+- script: |
+    echo "##vso[task.setvariable variable=tag]$BUILD_SOURCEBRANCHNAME"
+  displayName: 'Extract tag'
+
+- task: Docker@2
+  displayName: Build and push docker image
+  inputs: 
+    command: buildAndPush
+    dockerfile: '$(modulePath)/docker/operator/Dockerfile'
+    buildContext: '$(modulePath)/bin'
+    repository: $(OperatorDockerRepository)
+    tags: |
+      $(tag)
+
+- script: |
+    ESCAPED_REPO=${OPERATORDOCKERREPOSITORY/\//\\/}
+    IMAGEID=$(docker image ls --filter label=com.visualstudio.msasg.image.build.repository.uri=$BUILD_REPOSITORY_URI --filter label=com.visualstudio.msasg.image.build.sourceversion=$BUILD_SOURCEVERSION --filter label=com.visualstudio.msasg.image.build.definitionname=$SYSTEM_DEFINITIONNAME --filter label=com.visualstudio.msasg.image.build.buildnumber=$BUILD_BUILDNUMBER --format "{{ .ID }}")
+    echo "found image ID $IMAGEID"
+    DIGESTS=$(docker inspect $IMAGEID --format="{{ index .RepoDigests 0 }}")
+    DIGESTS=$(echo $DIGESTS | sed "s/^.*$ESCAPED_REPO/$ESCAPED_REPO/")
+    echo "found image digests $DIGESTS"
+    TAGS=$(docker inspect $IMAGEID --format="{{ index .RepoTags 0 }}")
+    TAGS=$(echo $TAGS | sed "s/^.*$ESCAPED_REPO/$ESCAPED_REPO/")
+    echo "found image tags $TAGS"
+    echo "##vso[task.setvariable variable=imageDigests]$DIGESTS"
+    echo "##vso[task.setvariable variable=imageTags]$TAGS"
+  displayName: 'Extract image information'
+
+- task: Docker@2
+  displayName: Logout from ACR
+  inputs: 
+    command: logout
+    containerRegistry: $(DockerRegistryConnectionID)

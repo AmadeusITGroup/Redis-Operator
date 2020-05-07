@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	v1 "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
-	rclient "github.com/amadeusitgroup/redis-operator/pkg/client"
+	rclient "github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 )
 
 func main() {
@@ -49,19 +50,19 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	redisClient, err := rclient.NewClient(rest)
+	redisClient, err := rclient.NewForConfig(rest)
 	if err != nil {
 		glog.Fatalf("Unable to init redis.clientset from kubeconfig:%v", err)
 	}
 
 	rcs := &v1.RedisClusterList{}
 	if clusterName == "" {
-		rcs, err = redisClient.RedisoperatorV1().RedisClusters(namespace).List(meta_v1.ListOptions{})
+		rcs, err = redisClient.RedisoperatorV1().RedisClusters(namespace).List(context.TODO(), meta_v1.ListOptions{})
 		if err != nil {
 			glog.Fatalf("unable to list redisclusters:%v", err)
 		}
 	} else {
-		rc, err := redisClient.RedisoperatorV1().RedisClusters(namespace).Get(clusterName, meta_v1.GetOptions{})
+		rc, err := redisClient.RedisoperatorV1().RedisClusters(namespace).Get(context.TODO(), clusterName, meta_v1.GetOptions{})
 		if err == nil && rc != nil {
 			rcs.Items = append(rcs.Items, *rc)
 		}

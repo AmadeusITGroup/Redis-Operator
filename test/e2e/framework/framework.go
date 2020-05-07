@@ -3,7 +3,6 @@ package framework
 import (
 	"fmt"
 
-	"github.com/amadeusitgroup/redis-operator/pkg/client"
 	"github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 
 	clientset "k8s.io/client-go/kubernetes"
@@ -41,7 +40,7 @@ func (f *Framework) kubeClient() (clientset.Interface, error) {
 }
 
 func (f *Framework) redisOperatorClient() (versioned.Interface, error) {
-	c, err := client.NewClient(f.KubeConfig)
+	c, err := versioned.NewForConfig(f.KubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create rediscluster client:%v", err)
 	}

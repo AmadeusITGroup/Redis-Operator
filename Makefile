@@ -13,7 +13,7 @@ TAG?=$(shell git tag|tail -1)
 COMMIT=$(shell git rev-parse HEAD)
 VERSION?=$(shell cat version.txt)
 DATE=$(shell date +%Y-%m-%d/%H:%M:%S )
-BUILDINFOPKG=github.com/amadeusitgroup/redis-operator/pkg/utils
+BUILDINFOPKG=github.com/technicianted/redis-operator/pkg/utils
 LDFLAGS= -ldflags "-w -X ${BUILDINFOPKG}.TAG=${TAG} -X ${BUILDINFOPKG}.COMMIT=${COMMIT} -X ${BUILDINFOPKG}.VERSION=${VERSION} -X ${BUILDINFOPKG}.BUILDTIME=${DATE} -s"
 
 all: build
@@ -24,10 +24,10 @@ install-plugin:
 	./tools/install-plugin.sh
 
 build-%:
-	CGO_ENABLED=0 go build -i -installsuffix cgo ${LDFLAGS} -o bin/$* ./cmd/$*
+	go build ${LDFLAGS} -o bin/$* ./cmd/$*
 
 buildlinux-%: ${SOURCES}
-	CGO_ENABLED=0 GOOS=linux go build -i -installsuffix cgo ${LDFLAGS} -o docker/$*/$* ./cmd/$*/main.go
+	go build ${LDFLAGS} -o docker/$*/$* ./cmd/$*/main.go
 
 container-%: buildlinux-%
 	@cd docker/$* && docker build -t $(PREFIX)$*:$(TAG) .

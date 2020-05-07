@@ -2,6 +2,7 @@ package pod
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -65,7 +66,7 @@ func (p *RedisClusterControl) CreatePod(redisCluster *rapi.RedisCluster) (*kapiv
 		return pod, err
 	}
 	glog.V(6).Infof("CreatePod: %s/%s", redisCluster.Namespace, pod.Name)
-	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Create(pod)
+	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Create(context.TODO(), pod, metav1.CreateOptions{})
 }
 
 // DeletePod used to delete a pod from its name
@@ -83,7 +84,7 @@ func (p *RedisClusterControl) DeletePodNow(redisCluster *rapi.RedisCluster, podN
 
 // DeletePodNow used to delete now (force) a pod from its name
 func (p *RedisClusterControl) deletePodGracefullperiode(redisCluster *rapi.RedisCluster, podName string, period *int64) error {
-	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Delete(podName, &metav1.DeleteOptions{GracePeriodSeconds: period})
+	return p.KubeClient.CoreV1().Pods(redisCluster.Namespace).Delete(context.TODO(), podName, metav1.DeleteOptions{GracePeriodSeconds: period})
 }
 
 func initPod(redisCluster *rapi.RedisCluster) (*kapiv1.Pod, error) {
