@@ -1,4 +1,6 @@
-apiVersion: extensions/v1beta1
+# changed: `extensions/v1beta1` -> `apps/v1`
+# reason: Deployment is part of apps/v1 api now not extensions
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "fullname" . }}
@@ -8,6 +10,10 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
+  # added: `selector`
+  selector:
+    matchLabels:
+      app: {{ template "name" . }}
   replicas: {{ .Values.replicaCount }}
   strategy: 
     type: {{ .Values.strategy }}
