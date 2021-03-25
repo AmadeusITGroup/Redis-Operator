@@ -1,8 +1,10 @@
-{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1beta1" }}
+# changed: "rbac.authorization.k8s.io/v1beta1" -> "rbac.authorization.k8s.io/v1"
+# reason: receiving warnings
+{{- if .Capabilities.APIVersions.Has "rbac.authorization.k8s.io/v1" }}
 apiVersion: v1
 kind: List
 items:
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     name: {{ template "serviceaccount" . }}
@@ -14,7 +16,7 @@ items:
     - endpoints
     - pods
     verbs: ["list", "get"]
-- apiVersion: rbac.authorization.k8s.io/v1beta1
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
   metadata:
     name: {{ template "serviceaccount" . }}
